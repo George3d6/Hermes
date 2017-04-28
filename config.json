@@ -1,0 +1,5 @@
+{
+	"port":"7444"
+	,"logPath":"/home/george/Hermes/logs/"
+	,"filePath":"/home/george/Hermes/storage/"
+}
