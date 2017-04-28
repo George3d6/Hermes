@@ -61,16 +61,13 @@ func DeserializeFileModel(serialization []byte) FileModel {
 //FileList is meant to hold multiple file models
 //FileList is meant to be used by multiple threads and as such all methods are thread safe unless otherwise specified
 type FileList struct {
-    mutex    sync.RWMutex
     fileList []FileModel
 }
 
 //Serialize gives a string (as a byte slice) represntation of a FileList struct
 func (list * FileList) Serialize() []byte {
     var serialization string
-	list.mutex.RLock()
 	serialization = strings.Join(list.fileList,"#|#")
-	list.mutex.RUnlock()
 	return serialization
 }
 
@@ -92,9 +89,7 @@ func (list * FileList) AddFile(file FileModel) bool {
         return false
     }
 
-    list.mutex.Lock()
     list.fileList = append(list.fileList, file)
-    list.mutex.Unlock()
     return true
 }
 
@@ -104,7 +99,6 @@ func (list * FileList) RemoveFile(name string) (bool, FileModel) {
     var newList []FileModel = make([]FileModel, 0, len(list.fileList) - 1)
     var success bool = false
     var removedFile FileModel
-    list.mutex.RLock()
     for _, file := range list.fileList {
         if !(file.Name == name) {
             //@TODO: Look into doing this more efficiently using copy or a similar mechanism
@@ -114,10 +108,7 @@ func (list * FileList) RemoveFile(name string) (bool, FileModel) {
             removedFile = file
         }
     }
-    list.mutex.RUnlock()
-    list.mutex.Lock()
     list.fileList = newList
-    list.mutex.Unlock()
     return success, removedFile
 }
 
@@ -128,7 +119,6 @@ func (list * FileList) DeleteFile(name string) (bool, FileModel) {
     var success bool
     var fileDeleted FileModel
     var newList []FileModel = make([]FileModel, 0, len(list.fileList) - 1)
-    list.mutex.RLock()
     for _, file := range list.fileList {
         if !(file.Name == name) {
             //@TODO: Look into doing this more efficiently using copy or a similar mechanism
@@ -141,44 +131,34 @@ func (list * FileList) DeleteFile(name string) (bool, FileModel) {
             }
         }
     }
-    list.mutex.RUnlock()
-    list.mutex.Lock()
     list.fileList = newList
-    list.mutex.Unlock()
     return success, fileDeleted
 }
 
 //FindFile finds a file in the list and returns in togehter with true if the file is found
 //Otherwise it return false
 func (list * FileList) FindFile(name string) (bool, FileModel) {
-    list.mutex.RLock()
     for _, file := range list.fileList {
         if(file.Name == name) {
-            list.mutex.RUnlock()
             return true, file
         }
     }
-    list.mutex.RUnlock()
     return false, FileModel{}
 }
 
 //CleanUp is an efficient routine for cleaning up the list of old files and deleting old files
 func (list * FileList) CleanUp() {
     var newList []FileModel = make([]FileModel, 0, len(list.fileList))
-    list.mutex.RLock()
     for _, file := range list.fileList {
         if(!file.Update()) {
             //@TODO: Look into doing this more efficiently using copy or a similar mechanism
             newList = append(newList, file)
         }
     }
-    list.mutex.RUnlock()
-    list.mutex.Lock()
     list.fileList = newList
-    list.mutex.Unlock()
 }
 
 //CreateFileList creates a new file list and returns it
 func CreateFileList() FileList {
-    return FileList{fileList: make([]FileModel, 0, 233), mutex: sync.RWMutex{}}
+    return FileList{fileList: make([]FileModel, 0, 233)}
 }
