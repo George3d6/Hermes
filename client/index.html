@@ -1,10 +1,71 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
     <title>Hermes</title>
-  </head>
-  <body>
-    <h1>Hello Hermes</h1>
-  </body>
+    <link rel="stylesheet" type="text/css" href="/static/semantic.min.css">
+    <link rel="stylesheet" href="/static/bundle.css">
+</head>
+
+<body>
+    <div class="ui grid" id="the_header">
+            <h1 class="six wide column title_header">Hermes</h1>
+            <div class="ten wide column top_action_holder">
+                <i class="sign in icon big action_icon"></i>
+                <i class="browser icon big action_icon"></i>
+                <i class="edit icon big action_icon"></i>
+            </div>
+    </div>
+    <div class="" id="root">
+        <div class="content_holder" id="main content_holder">
+            <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post">
+                <div class="fields">
+                    <div class="field">
+                        <input name="name" placeholder="File Name" type="text">
+                    </div>
+                    <div class="field">
+                        <label for="file" class="ui icon button" style="height:38px">
+                    <i class="file icon"></i>
+                    Upload File</label>
+                        <input name='file' type="file" id="file" style="display:none">
+                    </div>
+
+                    <div class="field">
+                <select id="compression">
+                  <option value="plain">Ucompressed</option>
+                  <option value="gz">Gzip</option>
+                  <option value="xz">Xz</option>
+                </select>
+                    </div>
+                </div>
+
+                <div class="fields">
+                    <div class="field">
+                        <div class="ui toggle checkbox">
+                            <input name="gift" tabindex="0" class="hidden" type="checkbox">
+                            <label>Public</label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <input name="ttl" placeholder="Time to live in seconds" type="text">
+                    </div>
+                    <button class="ui button" type="submit" id="submit_form">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+<!--Semantic UI dependencies -->
+<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+<script src="/static/semantic.min.js"></script>
+<!--Semantic UI activation -->
+<script>
+    $('.ui.dropdown').dropdown();
+    $('.ui.accordion').accordion();
+    $('.ui.checkbox').checkbox();
+</script>
+<!--Websites own javascript-->
+<script src="/static/bundle.js"></script>
+
 </html>

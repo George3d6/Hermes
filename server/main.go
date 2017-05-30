@@ -43,20 +43,17 @@ func main() {
 	}
 
 	//Static ressources serving
-	http.Handle("/style/", http.StripPrefix("/style/", http.FileServer(http.Dir("./client/style"))))
-	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("./client/img"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./client/js"))))
-	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("./client/fonts"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/static"))))
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./client/img/favicon.ico")
+		http.ServeFile(w, r, "./client/static/favicon.ico")
 	})
+
+	//API calls
+	http.HandleFunc("/authenticate/", engageAuthSession)
+	http.HandleFunc("/upload/", uploadFile)
 
 	//veiw rendering
 	http.HandleFunc("/", serveHome)
-
-	//API calls
-	http.HandleFunc("/authenticate", engageAuthSession)
-	http.HandleFunc("/upload", uploadFile)
 
 	//Start Server
 	logo.LogDebug("Server will start running on port: " + configuration.Port)

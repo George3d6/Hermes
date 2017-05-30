@@ -1,0 +1,37 @@
+
+#the_header {
+    width:100%;
+    padding: 0 0 0 0 !important;
+    margin: 0 0 0 0 !important;
+}
+
+.title_header {
+    padding-left:5% !important;
+    padding-top:26px !important;
+}
+
+.top_action_holder {
+    text-align:right;
+    padding-top:30px !important;
+}
+
+.action_icon {
+    display: inline-block;
+    margin-right:5% !important;
+}
+
+#root {
+    text-align: center;
+}
+
+#content_holder  {
+  display: inline-block;
+  width: 100%;
+  max-width: 1200px;
+  padding-right: 5%;
+  padding-left: 5%;
+  text-align: left;
+}
+#upload_form {
+    display: inline-block;
+}

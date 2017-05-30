@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"time"
-    "sync"
 	"encoding/json"
 	"strings"
 
@@ -17,6 +16,7 @@ type FileModel struct {
 	Compression string		`json:"compression"`
 	Birth       time.Time	`json:"birth"`
 	TTL         int64		`json:"ttl"`
+	Size		int64		`json:"size"`
 }
 
 
@@ -67,8 +67,13 @@ type FileList struct {
 //Serialize gives a string (as a byte slice) represntation of a FileList struct
 func (list * FileList) Serialize() []byte {
     var serialization string
-	serialization = strings.Join(list.fileList,"#|#")
-	return serialization
+	var stringifiedFiles []string = []string{}
+	for _, file := range list.fileList {
+		stringifiedFiles = append(stringifiedFiles, string(file.Serialize()))
+	}
+
+	serialization = strings.Join(stringifiedFiles,"#|#")
+	return []byte(serialization)
 }
 
 //DeserializeFileList takes a byte slice and create a FileList

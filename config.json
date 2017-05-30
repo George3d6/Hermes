@@ -1,5 +1,6 @@
 {
-	"port":"7444"
+	"port":"3280"
 	,"logPath":"/home/george/Hermes/logs/"
 	,"filePath":"/home/george/Hermes/storage/"
+	,"hashSalt":" I am so salty right now "
 }
