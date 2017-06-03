@@ -80,6 +80,24 @@ func ModifyToken(newToken Token) bool {
     return true
 }
 
+//GetPublicToken checks the public token
+func GetPublicToken() Token {
+    mutex.RLock()
+    token := tokenMap["public"]
+    mutex.RUnlock()
+    return token
+}
+
+//UpdatePublicToken update the public token, multiple threads can do it at the same time so we can't do it though the modify method
+func UpdatePublicToken(filename string) {
+    mutex.Lock()
+    newPublicToken := tokenMap["public"]
+    newPublicToken.OwnedFiles = append(newPublicToken.OwnedFiles, filename)
+    tokenMap["public"] = newPublicToken
+    mutex.Unlock()
+    return
+}
+
 //ValidateSession checks the validty of a token and return the correspondent structure if the token is valid
 func ValidateSession(identifier string, sessionId string) (bool, Token) {
     mutex.RLock()

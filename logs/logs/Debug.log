@@ -1,20 +1,3 @@
-Server will start running on port: 3280  ||  2017-05-12 17:02:27.202949166 +0000 UTC
-plain
-
-
-
-  ||  2017-05-12 17:02:35.400826736 +0000 UTC
-Someone used identifier 'admin' in order to try accessing a token for which he didn't have credentials  ||  2017-05-12 17:02:35.545775545 +0000 UTC
-plain
-
-
-
-  ||  2017-05-12 17:03:19.896270631 +0000 UTC
-><
-  ||  2017-05-12 17:03:20.056470197 +0000 UTC
-><
-  ||  2017-05-12 17:03:20.056550423 +0000 UTC
-><
-  ||  2017-05-12 17:03:20.056579397 +0000 UTC
-><
-  ||  2017-05-12 17:03:20.056662227 +0000 UTC
+Server will start running on port: 3280  ||  2017-06-03 03:31:31.954243879 +0000 UTC
+Someone used identifier 'admin' in order to try accessing a token for which he didn't have credentials  ||  2017-06-03 03:31:44.682457248 +0000 UTC
+/home/george/Hermes/storage/Uyy  ||  2017-06-03 03:32:03.734174114 +0000 UTC

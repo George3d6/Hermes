@@ -28,11 +28,11 @@
                         <label for="file" class="ui icon button" style="height:38px">
                     <i class="file icon"></i>
                     Upload File</label>
-                        <input name='file' type="file" id="file" style="display:none">
+                        <input name="file" type="file" id="file" style="display:none">
                     </div>
 
                     <div class="field">
-                <select id="compression">
+                <select id="compression" name="compression" form="upload_form">
                   <option value="plain">Ucompressed</option>
                   <option value="gz">Gzip</option>
                   <option value="xz">Xz</option>
@@ -42,8 +42,8 @@
 
                 <div class="fields">
                     <div class="field">
-                        <div class="ui toggle checkbox">
-                            <input name="gift" tabindex="0" class="hidden" type="checkbox">
+                        <div class="ui toggle checkbox" id="public_switch">
+                            <input name="gift" tabindex="0" class="hidden" type="checkbox" >
                             <label>Public</label>
                         </div>
                     </div>

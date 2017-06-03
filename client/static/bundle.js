@@ -57,33 +57,27 @@
 	    value: true
 	});
 	var uploadFile = function uploadFile(form_id) {
+	    var publicFile = "false";
+	    document.getElementById('public_switch').addEventListener('click', function () {
+	        if (publicFile === "false") {
+	            publicFile = "true";
+	        } else {
+	            publicFile = "false";
+	        }
+	        console.log(publicFile);
+	    });
 	    var uploadForm = document.getElementById(form_id);
 	    uploadForm.onsubmit = function () {
 	        var formData = new FormData(uploadForm);
 	        formData.append('file', document.getElementById('file').files[0]);
 	        formData.append('compression', document.getElementById('compression').value);
-	        console.log(document.getElementById('compression').value);
-	        console.log(document.getElementById('compression'));
+	        formData.append('public', publicFile);
 	        var xhr = new XMLHttpRequest();
 	        xhr.open("POST", "/upload/");
 	        xhr.send(formData);
 	        xhr.onreadystatechange = function () {
 	            console.log(xhr.responseText);
 	        };
-	        /*
-	        //Not using fetch for now because of various errors
-	        fetch('/upload/', {
-	            method: 'POST',
-	            headers: {
-	                'Content-Type': 'multipart/form-data'
-	            },
-	            body: formData
-	        }).then((response) => {
-	            console.log(response);
-	        }).catch((err) => {
-	            console.log(err);
-	        })
-	        */
 	    };
 	};
 

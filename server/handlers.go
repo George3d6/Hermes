@@ -60,38 +60,48 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile("file")
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, file can't be read`)
+		fmt.Fprintf(w, `Could not upload file, file can't be read\n`)
 		return
 	}
 
-	defer file.Close()
+	//defer file.Close()
 	name := r.FormValue("name")
 	compression := r.FormValue("compression")
-	logo.LogDebug(compression + "\n\n\n\n")
+	public := r.FormValue("public");
 
     ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, can't parse time to live(ttl)`)
+		fmt.Fprintf(w, `Could not upload file, can't parse time to live(ttl)\n`)
 		return
 	}
 
-	newFileModel := FileModel{Path: configuration.FilePath + name + "." + compression, Name: name, TTL: int64(ttl), Birth: time.Now(),
+	extension := "";
+	if compression == "gz" {
+		extension = ".gz"
+	}
+	if compression == "xz" {
+		extension = ".xz"
+	}
+
+
+	newFileModel := FileModel{Path: configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
 
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
 	if err != nil {
-		fmt.Fprintf(w, `Not authenticated`)
+		fmt.Fprintf(w, `Not authenticated\n`)
 		return
 	}
 	values := strings.Split(cookie.Value, "#|#")
 	if len(values) < 2 {
-		fmt.Fprintf(w, `Authentication cookie malformed`)
+		fmt.Fprintf(w, `Authentication cookie malformed\n`)
+		return
 	}
 	valid, token := ValidateSession(values[0], values[1])
 	if !valid {
-		fmt.Fprintf(w, `Session Id invalid`)
+		fmt.Fprintf(w, `Session Id invalid\n`)
 		return
 	}
 	/* @TODO fix this, currently the comparison seems not to work
@@ -101,32 +111,38 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	*/
-	logo.LogDebug("><\n")
+
 	if token.UploadNumber < 1 {
-		fmt.Fprint(w, "Reached maximum upload limit for this token/user")
+		fmt.Fprint(w, "Reached maximum upload limit for this token/user\n")
 		return
 	}
-	logo.LogDebug("><\n")
+
 	token.UploadNumber = token.UploadNumber - 1
 	token.OwnedFiles = append(token.OwnedFiles, newFileModel.Name)
 	if !ModifyToken(token) {
-		fmt.Fprint(w, "Internal server error, please try again and inform the administrator about this")
+		fmt.Fprint(w, "Internal server error, please try again and inform the administrator about this\n")
 		return
 	}
-	logo.LogDebug("><\n")
+
+	if(public == "true") {
+		UpdatePublicToken(newFileModel.Name)
+	}
+
 	//Uploading
-	permanentFile, err := os.OpenFile(newFileModel.Path , os.O_WRONLY | os.O_CREATE, 0666)
+	logo.LogDebug(newFileModel.Path)
+	permanentFile, err := os.OpenFile(newFileModel.Path , os.O_WRONLY|os.O_CREATE, 0666)
+
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds`)
+		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
 		return
 	}
 	defer permanentFile.Close()
-	logo.LogDebug("><\n")
+
 	switch compression := newFileModel.Compression; compression {
 	case "gz":
 		gzipped, err := gzip.NewWriterLevel(permanentFile, 6)
 		if logo.RuntimeError(err) {
-			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds`)
+			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
 			return
 		}
 		defer gzipped.Close()
@@ -134,7 +150,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "xz":
 		xzw, err := xz.NewWriter(permanentFile)
 		if logo.RuntimeError(err) {
-			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds`)
+			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
 			return
 		}
 		defer xzw.Close()
@@ -142,11 +158,50 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "plain":
 		io.Copy(permanentFile, file)
 	default:
-		fmt.Fprintf(w, "Wrong compression format")
+		fmt.Fprintf(w, "Wrong compression format\n")
 	}
 	if !globalFileList.AddFile(newFileModel) {
-		fmt.Fprintf(w, `Could not upload file, a similarly named file already exists`)
+		fmt.Fprintf(w, `Could not upload file, a similarly named file already exists\n`)
 		return
 	}
-	fmt.Fprintf(w, `Successfully uploaded file`)
+	fmt.Fprintf(w, "Successfully uploaded file\n")
+	return
+}
+
+//List files
+func listFiles(w http.ResponseWriter, r *http.Request) {
+	//Doing the authentication
+	cookie, err := r.Cookie("auth")
+	if err != nil {
+		fmt.Fprintf(w, `Not authenticated\n`)
+		return
+	}
+	values := strings.Split(cookie.Value, "#|#")
+	if len(values) < 2 {
+		fmt.Fprintf(w, `Authentication cookie malformed\n`)
+		return
+	}
+	valid, token := ValidateSession(values[0], values[1])
+	if !valid {
+		fmt.Fprintf(w, `Session Id invalid\n`)
+		return
+	}
+	stringified := ""
+	for _, val := range token.OwnedFiles {
+		found, file := globalFileList.FindFile(val)
+		fmt.Println(found)
+		if(found) {
+			stringified += file.Name + "|#|" +  strconv.Itoa(int(file.Size)) + "|#|" +  strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		}
+	}
+	publicToken := GetPublicToken()
+	for _, val := range publicToken.OwnedFiles {
+		found, file := globalFileList.FindFile(val)
+		fmt.Println(found)
+		if(found) {
+			stringified += file.Name + "|#|" +  strconv.Itoa(int(file.Size)) + "|#|" +  strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		}
+	}
+	fmt.Fprintf(w, stringified)
+	return
 }

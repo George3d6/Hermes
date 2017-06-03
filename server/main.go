@@ -51,6 +51,7 @@ func main() {
 	//API calls
 	http.HandleFunc("/authenticate/", engageAuthSession)
 	http.HandleFunc("/upload/", uploadFile)
+	http.HandleFunc("/list/", listFiles)
 
 	//veiw rendering
 	http.HandleFunc("/", serveHome)
