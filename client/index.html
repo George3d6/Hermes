@@ -10,16 +10,16 @@
 
 <body>
     <div class="ui grid" id="the_header">
-            <h1 class="six wide column title_header">Hermes</h1>
-            <div class="ten wide column top_action_holder">
-                <i class="sign in icon big action_icon"></i>
-                <i class="browser icon big action_icon"></i>
-                <i class="edit icon big action_icon"></i>
-            </div>
+        <h1 class="six wide column title_header">Hermes</h1>
+        <div class="ten wide column top_action_holder">
+            <a id="sign_in_button"><i class="sign in icon big action_icon"></i></a>
+            <a href="/#!/files"><i class="browser icon big action_icon"></i></a>
+            <a href="/#!/permission"><i class="edit icon big action_icon"></i></a>
+        </div>
     </div>
     <div class="" id="root">
         <div class="content_holder" id="main content_holder">
-            <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post">
+            <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post" action='/upload/'>
                 <div class="fields">
                     <div class="field">
                         <input name="name" placeholder="File Name" type="text">
@@ -32,7 +32,7 @@
                     </div>
 
                     <div class="field">
-                <select id="compression" name="compression" form="upload_form">
+                        <select id="compression" name="compression" form="upload_form">
                   <option value="plain">Ucompressed</option>
                   <option value="gz">Gzip</option>
                   <option value="xz">Xz</option>
@@ -42,8 +42,8 @@
 
                 <div class="fields">
                     <div class="field">
-                        <div class="ui toggle checkbox" id="public_switch">
-                            <input name="gift" tabindex="0" class="hidden" type="checkbox" >
+                        <div class="ui pink toggle checkbox" id="public_switch">
+                            <input name="gift" tabindex="0" class="hidden" type="checkbox">
                             <label>Public</label>
                         </div>
                     </div>
@@ -54,6 +54,22 @@
                 </div>
             </form>
         </div>
+        <div class="ui relaxed divided list" id="file_list"></div>
+
+        <div class="ui modal" id="sign_in_form_modal">
+            <form class="ui form" id="sign_in_form" >
+                <div class="field">
+                    <label>Username</label>
+                    <input type="text" name="first-name" placeholder="Username">
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <input type="password" name="last-name" placeholder="Password">
+                </div>
+                <button class="ui blue button" type="submit">Sign in</button>
+            </form>
+        </div>
+
     </div>
 </body>
 <!--Semantic UI dependencies -->
@@ -64,6 +80,11 @@
     $('.ui.dropdown').dropdown();
     $('.ui.accordion').accordion();
     $('.ui.checkbox').checkbox();
+    document.getElementById('sign_in_button').addEventListener('click', () => {
+        $('#sign_in_form_modal')
+          .modal('show')
+        ;
+    });
 </script>
 <!--Websites own javascript-->
 <script src="/static/bundle.js"></script>

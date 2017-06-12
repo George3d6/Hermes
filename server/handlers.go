@@ -1,15 +1,15 @@
 package main
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
-	"compress/gzip"
 	"strings"
+	"time"
 
 	"git.cerebralab.com/george/logo"
 
@@ -18,9 +18,48 @@ import (
 
 var globalFileList FileList
 
-func initHandlers() {
-	globalFileList = CreateFileList()
-	initializeAdmin([]byte("the salt"), "admin", "admin")
+func initHandlers(adminName string, adminPassword string) {
+	fmt.Println(Configuration.StatePath + "file_list.json")
+	flcontent, err := ioutil.ReadFile(Configuration.StatePath + "file_list.json")
+	logo.RuntimeFatal(err)
+	tmcontent, err := ioutil.ReadFile(Configuration.StatePath + "token_map.json")
+	logo.RuntimeFatal(err)
+	globalFileList = DeserializeFileList(flcontent)
+	DeserializeTokenMap(tmcontent)
+	InitializeAdmin([]byte("the salt"), adminName, adminPassword)
+	var oldFlSerialization string
+	var oldTmSerialization string
+	//Loop to preserve state
+	go func() {
+		for {
+			//sleep
+			time.Sleep(1 * time.Second)
+			newFlSerialization := string(globalFileList.Serialize())
+			newTmSerialization := string(SerializeTokenMap())
+
+			if (oldTmSerialization != newTmSerialization) {
+				oldTmSerialization = newTmSerialization
+
+				//save token map
+				tmSerializationFile, err := os.Create(Configuration.StatePath + "token_map.json")
+				logo.RuntimeError(err)
+				defer tmSerializationFile.Close()
+				_, err = io.Copy(tmSerializationFile, strings.NewReader(oldTmSerialization))
+				logo.RuntimeError(err)
+			}
+
+			if (oldFlSerialization != newFlSerialization) {
+				oldFlSerialization = newFlSerialization
+
+				//save file list
+				fileListSerializationFile, err := os.Create(Configuration.StatePath + "file_list.json")
+				logo.RuntimeError(err)
+				defer fileListSerializationFile.Close()
+				_, err = io.Copy(fileListSerializationFile, strings.NewReader(oldFlSerialization))
+				logo.RuntimeError(err)
+			}
+		}
+	}()
 }
 
 //Server the index.html file
@@ -44,7 +83,7 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 	isValid, sessionId := ValidateToke(identifier, credentials)
 	if isValid {
 		expiration := time.Now().Add(24 * time.Hour)
-		authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600*24}
+		authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
 		http.SetCookie(w, &authCookie)
 		//http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -56,27 +95,26 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 //parses multipart form and saves an image called "image" to a file
 func uploadFile(w http.ResponseWriter, r *http.Request) {
 	//Parsing the upload arguments into the values we shall be working with
-	r.ParseMultipartForm(32 << 20)
+	r.ParseMultipartForm(5000000000000000)
 
 	file, _, err := r.FormFile("file")
 	if logo.RuntimeError(err) {
 		fmt.Fprintf(w, `Could not upload file, file can't be read\n`)
 		return
 	}
-
 	//defer file.Close()
 	name := r.FormValue("name")
 	compression := r.FormValue("compression")
-	public := r.FormValue("public");
+	public := r.FormValue("public")
 
-    ttlString := r.FormValue("ttl")
+	ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
 	if logo.RuntimeError(err) {
 		fmt.Fprintf(w, `Could not upload file, can't parse time to live(ttl)\n`)
 		return
 	}
 
-	extension := "";
+	extension := ""
 	if compression == "gz" {
 		extension = ".gz"
 	}
@@ -84,8 +122,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		extension = ".xz"
 	}
 
-
-	newFileModel := FileModel{Path: configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
+	newFileModel := FileModel{Path: Configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
 
 	//Doing the authentication
@@ -124,13 +161,13 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if(public == "true") {
+	if public == "true" {
 		UpdatePublicToken(newFileModel.Name)
 	}
 
 	//Uploading
 	logo.LogDebug(newFileModel.Path)
-	permanentFile, err := os.OpenFile(newFileModel.Path , os.O_WRONLY|os.O_CREATE, 0666)
+	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
 
 	if logo.RuntimeError(err) {
 		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
@@ -189,17 +226,15 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 	stringified := ""
 	for _, val := range token.OwnedFiles {
 		found, file := globalFileList.FindFile(val)
-		fmt.Println(found)
-		if(found) {
-			stringified += file.Name + "|#|" +  strconv.Itoa(int(file.Size)) + "|#|" +  strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		if found {
+			stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
 		}
 	}
 	publicToken := GetPublicToken()
 	for _, val := range publicToken.OwnedFiles {
 		found, file := globalFileList.FindFile(val)
-		fmt.Println(found)
-		if(found) {
-			stringified += file.Name + "|#|" +  strconv.Itoa(int(file.Size)) + "|#|" +  strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		if found {
+			stringified += file.Name + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + file.Compression + "#|#"
 		}
 	}
 	fmt.Fprintf(w, stringified)

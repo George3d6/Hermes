@@ -1,3 +1,30 @@
+$text:rgb(34,34,34);
+$background: rgb(244, 244, 244);
+$action: rgb(100,181,246);
+$reaction: rgb(244,143,177);
+
+$break-small: 320px;
+$break-medium: 712px;
+$break-large: 1023px;
+
+@font-face {
+    font-family: "Fredericka";
+    src: url(../static/fonts/Fredericka_the_Great/FrederickatheGreat-Regular.ttf);
+}
+
+body {
+    color: $text;
+    background-color: $background;
+}
+
+a {
+    color: $action;
+    cursor: pointer;
+}
+
+a:hover {
+    color: hotpink;
+}
 
 #the_header {
     width:100%;
@@ -34,4 +61,32 @@
 }
 #upload_form {
     display: inline-block;
+}
+
+#sign_in_form {
+    padding: 40px 40px 40px 40px;
+}
+
+#file_list {
+    margin-top:40px;
+    float:left;
+    width: 100%;
+    margin-left: 16%;
+}
+
+.file_in_list {
+    width: 68%;
+    //max-width: 800px;
+    text-align: left;
+    display: inline-block;
+}
+
+#close_file_view_holder {
+        text-align: left;
+}
+
+#close_file_view {
+    display: inline-block;
+    margin-bottom:40px;
+    margin-top:40px;
 }

@@ -11,12 +11,13 @@ import (
 
 //Used for holding the configuration
 type configurationHolder struct {
-	Port     string `json:"port"`
-	LogPath  string `json:"logPath"`
-	FilePath string `json:"filePath"`
+	Port     	string  `json:"port"`
+	LogPath  	string  `json:"logPath"`
+	FilePath 	string	`json:"filePath"`
+	StatePath 	string	`json:"statePath"`
 }
 
-var configuration = configurationHolder{}
+var Configuration = configurationHolder{}
 
 //Keep it down to one file ?
 func main() {
@@ -29,18 +30,21 @@ func main() {
 	logo.RuntimeFatal(err)
 	decoder := json.NewDecoder(file)
 
-	err = decoder.Decode(&configuration)
+	err = decoder.Decode(&Configuration)
 	if err != nil {
 		panic("Cannot decode configuration")
 	}
 
-	logo.InitLoggers(configuration.LogPath)
-	initHandlers()
+	logo.InitLoggers(Configuration.LogPath)
+	initHandlers(os.Args[2], os.Args[3])
+
+
 	var server = &http.Server{
-		Addr:         ":" + configuration.Port,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	}
+		Addr:         ":" + Configuration.Port,
+		ReadTimeout:  300 * time.Second,
+		WriteTimeout: 300 * time.Second,
+		ReadHeaderTimeout: 300 * time.Second,
+		MaxHeaderBytes: 500000000}
 
 	//Static ressources serving
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/static"))))
@@ -57,6 +61,6 @@ func main() {
 	http.HandleFunc("/", serveHome)
 
 	//Start Server
-	logo.LogDebug("Server will start running on port: " + configuration.Port)
+	logo.LogDebug("Server will start running on port: " + Configuration.Port)
 	logo.RuntimeFatal(server.ListenAndServe())
 }

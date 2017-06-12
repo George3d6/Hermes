@@ -2,5 +2,6 @@
 	"port":"3280"
 	,"logPath":"/home/george/Hermes/logs/"
 	,"filePath":"/home/george/Hermes/storage/"
+	,"statePath":"/home/george/Hermes/ser/"
 	,"hashSalt":" I am so salty right now "
 }

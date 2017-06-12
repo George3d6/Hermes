@@ -1,50 +1,53 @@
-let debug = process.env.NODE_ENV;
-let webpack = require('webpack');
-let path = require('path');
+const webpack = require('webpack');
+const path = require('path');
+
+const babelOptions = {
+    "presets": "es2017",
+    plugins: [
+  ['transform-runtime', {
+    helpers: false,
+    polyfill: false,
+    regenerator: true, }],
+  'transform-es2015-destructuring',
+  'transform-async-to-generator',
+  ],
+}
 
 module.exports = {
-    devServer: {
-        port: 3000,
-        historyApiFallback: true
-    },
-    context: __dirname,
-    devtool: debug
-        ? 'inline sourcemap'
-        : null,
-    entry: ['./js/main.js'],
+    entry: ['./ts/main'],
     output: {
-        path: __dirname,
-        filename: 'static/bundle.js'
+        filename: 'bundle.js',
+        path: path.resolve(__dirname, 'static')
     },
     module: {
-        loaders: [
+        rules: [
             {
-                loader: "babel-loader",
+                test: /\.ts(x?)$/,
                 exclude: /node_modules/,
-                // Skip any files outside of your project's `src` directory
-                include: [path.resolve(__dirname, "")],
-
-                // Only run `.js` and `.jsx` files through Babel
-                test: /\.jsx?$/,
-
-                // Options to configure babel with
-                query: {
-                    plugins: [
-                        'transform-runtime', "syntax-async-functions", "transform-regenerator"
-                    ],
-                    presets: ['es2015']
-                }
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: babelOptions
+                    }, {
+                        loader: 'ts-loader'
+                    }
+                ]
+            }, {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: babelOptions
+                    }
+                ]
             }
         ]
     },
-    plugins: [
-        new webpack.optimize.DedupePlugin(),
-        new webpack.optimize.OccurenceOrderPlugin(),
-        //new webpack.optimize.UglifyJsPlugin({mangle: false, sourcemap: false}),
-        new webpack.DefinePlugin({
-            'process.env': {
-                NODE_ENV: JSON.stringify('production')
-            }
-        })
-    ]
-};
+    resolve: {
+        extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js']
+    },
+    plugins: []
+}
+
+//transform-runtime

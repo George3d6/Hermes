@@ -1,3 +1,18 @@
+@font-face {
+  font-family: "Fredericka";
+  src: url(../static/fonts/Fredericka_the_Great/FrederickatheGreat-Regular.ttf); }
+
+body {
+  color: #222222;
+  background-color: #f4f4f4; }
+
+a {
+  color: #64b5f6;
+  cursor: pointer; }
+
+a:hover {
+  color: hotpink; }
+
 #the_header {
   width: 100%;
   padding: 0 0 0 0 !important;
@@ -28,3 +43,25 @@
 
 #upload_form {
   display: inline-block; }
+
+#sign_in_form {
+  padding: 40px 40px 40px 40px; }
+
+#file_list {
+  margin-top: 40px;
+  float: left;
+  width: 100%;
+  margin-left: 16%; }
+
+.file_in_list {
+  width: 68%;
+  text-align: left;
+  display: inline-block; }
+
+#close_file_view_holder {
+  text-align: left; }
+
+#close_file_view {
+  display: inline-block;
+  margin-bottom: 40px;
+  margin-top: 40px; }
