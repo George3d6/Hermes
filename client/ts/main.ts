@@ -2,8 +2,10 @@ import uploadFile from './uploadFile';
 import listFiles from './listFiles';
 import router from './router';
 import File from './file'
+import enableAuthenticationForm from './authenticate'
 
 uploadFile('upload_form');
+enableAuthenticationForm();
 
 router.on('/files/', () => {
     listFiles().then((answer) => {
@@ -22,8 +24,8 @@ router.on('/files/', () => {
             document.getElementById('file_list').insertAdjacentHTML('beforeend',
                 `
             <div class="item file_in_list">
-             <i class="huge file middle aligned icon"></i>
-              <div class="content" id="${f.name}">
+             <i class="huge file middle aligned icon cursor_hover" onclick="window.location='/get/file/?file=${f.name}';"></i>
+              <div class="content" id="${f.name}" class="inline_content">
                 <p>
                     ${f.name}
                 </p>

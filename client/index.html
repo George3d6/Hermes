@@ -42,8 +42,8 @@
 
                 <div class="fields">
                     <div class="field">
-                        <div class="ui pink toggle checkbox" id="public_switch">
-                            <input name="gift" tabindex="0" class="hidden" type="checkbox">
+                        <div class="ui toggle checkbox">
+                            <input name="ispublis" type="checkbox" id="public_switch">
                             <label>Public</label>
                         </div>
                     </div>
@@ -60,13 +60,13 @@
             <form class="ui form" id="sign_in_form" >
                 <div class="field">
                     <label>Username</label>
-                    <input type="text" name="first-name" placeholder="Username">
+                    <input type="text" name="identifier" id="identifier_field" placeholder="Username">
                 </div>
                 <div class="field">
                     <label>Password</label>
-                    <input type="password" name="last-name" placeholder="Password">
+                    <input type="password" name="credentials" id="credentials_field" placeholder="Password">
                 </div>
-                <button class="ui blue button" type="submit">Sign in</button>
+                <button class="ui blue button" type="submit" id="submit_auth">Sign in</button>
             </form>
         </div>
 

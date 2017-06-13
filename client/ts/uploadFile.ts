@@ -2,8 +2,8 @@
 const uploadFile = (form_id: string) => {
     if (window.navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
         const uploadForm: HTMLFormElement = <HTMLFormElement>document.getElementById(form_id);
-        document.getElementById("submit_form").addEventListener("click", function(e) {
-            e.preventDefault()
+        document.getElementById("submit_form").addEventListener("click",(e) => {
+            e.preventDefault();
 
             let reader: FileReader = new FileReader();
             reader.readAsArrayBuffer((<HTMLInputElement>document.getElementById('file')).files[0]);
@@ -11,10 +11,11 @@ const uploadFile = (form_id: string) => {
             reader.onload = function(evt) {
 
                 const formData = new FormData(uploadForm);
-                const isPublic: boolean = (<HTMLInputElement>document.getElementById('public_switch')).checked;
+                const isPublic: string = String((<HTMLInputElement>document.getElementById('public_switch')).checked);
                 formData.append('file', (<any>evt.target).result);
                 formData.append('compression', (<HTMLInputElement>document.getElementById('compression')).value);
-                formData.append('public', String(isPublic));
+                formData.append('ispublis', isPublic);
+                alert(' the form value is:  ' + formData.get('ispublis'));
                 const xhr = new XMLHttpRequest();
                 xhr.open("POST", "/upload/");
                 xhr.send(formData);

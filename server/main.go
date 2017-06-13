@@ -11,10 +11,10 @@ import (
 
 //Used for holding the configuration
 type configurationHolder struct {
-	Port     	string  `json:"port"`
-	LogPath  	string  `json:"logPath"`
-	FilePath 	string	`json:"filePath"`
-	StatePath 	string	`json:"statePath"`
+	Port      string `json:"port"`
+	LogPath   string `json:"logPath"`
+	FilePath  string `json:"filePath"`
+	StatePath string `json:"statePath"`
 }
 
 var Configuration = configurationHolder{}
@@ -24,7 +24,7 @@ func main() {
 	var configurationFile string = "config.json"
 	if len(os.Args) > 1 {
 		configurationFile = os.Args[1]
-	};
+	}
 
 	file, err := os.Open(configurationFile)
 	logo.RuntimeFatal(err)
@@ -38,13 +38,12 @@ func main() {
 	logo.InitLoggers(Configuration.LogPath)
 	initHandlers(os.Args[2], os.Args[3])
 
-
 	var server = &http.Server{
-		Addr:         ":" + Configuration.Port,
-		ReadTimeout:  300 * time.Second,
-		WriteTimeout: 300 * time.Second,
+		Addr:              ":" + Configuration.Port,
+		ReadTimeout:       300 * time.Second,
+		WriteTimeout:      300 * time.Second,
 		ReadHeaderTimeout: 300 * time.Second,
-		MaxHeaderBytes: 500000000}
+		MaxHeaderBytes:    500000000}
 
 	//Static ressources serving
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/static"))))
@@ -56,6 +55,7 @@ func main() {
 	http.HandleFunc("/authenticate/", engageAuthSession)
 	http.HandleFunc("/upload/", uploadFile)
 	http.HandleFunc("/list/", listFiles)
+	http.HandleFunc("/get/file/", getFile)
 
 	//veiw rendering
 	http.HandleFunc("/", serveHome)

@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -78,7 +78,9 @@ var uploadFile_1 = __webpack_require__(4);
 var listFiles_1 = __webpack_require__(2);
 var router_1 = __webpack_require__(3);
 var file_1 = __webpack_require__(1);
+var authenticate_1 = __webpack_require__(5);
 uploadFile_1["default"]('upload_form');
+authenticate_1["default"]();
 router_1["default"].on('/files/', function () {
     listFiles_1["default"]().then(function (answer) {
         var files = [];
@@ -90,7 +92,7 @@ router_1["default"].on('/files/', function () {
         document.getElementById('file_list').insertAdjacentHTML('beforeend', "<p id=\"close_file_view_holder\"><a href=\"/#!\" id=\"close_file_view\"><i class=\"close icon big\"></i></a></p>");
         files.forEach(function (f) {
             var fileDies = f.death;
-            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge file middle aligned icon\"></i>\n              <div class=\"content\" id=\"" + f.name + "\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDies + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
+            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge file middle aligned icon cursor_hover\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDies + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
         });
     })["catch"](function (err) {
         console.log("Something went horribly wrong: " + err);
@@ -150,7 +152,7 @@ exports["default"] = listFiles;
 
 
 exports.__esModule = true;
-var navigo_1 = __webpack_require__(5);
+var navigo_1 = __webpack_require__(6);
 var root = null;
 var useHash = true;
 var hash = '#!';
@@ -175,10 +177,11 @@ var uploadFile = function (form_id) {
             reader.readAsArrayBuffer(document.getElementById('file').files[0]);
             reader.onload = function (evt) {
                 var formData = new FormData(uploadForm_1);
-                var isPublic = document.getElementById('public_switch').checked;
+                var isPublic = String(document.getElementById('public_switch').checked);
                 formData.append('file', evt.target.result);
                 formData.append('compression', document.getElementById('compression').value);
-                formData.append('public', String(isPublic));
+                formData.append('ispublis', isPublic);
+                alert(' the form value is:  ' + formData.get('ispublis'));
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", "/upload/");
                 xhr.send(formData);
@@ -195,6 +198,28 @@ exports["default"] = uploadFile;
 
 /***/ }),
 /* 5 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+const enableAuthenticationForm = () => {
+    document.getElementById("submit_auth").addEventListener("click", e => {
+        e.preventDefault();
+        const identifier = document.getElementById("identifier_field").value;
+        const credentials = document.getElementById("credentials_field").value;
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `/authenticate/?identifier=${identifier}&credentials=${credentials}`);
+        xhr.send();
+        xhr.onreadystatechange = function () {
+            $('#sign_in_form_modal').modal('hide');
+        };
+    });
+};
+
+/* harmony default export */ __webpack_exports__["default"] = (enableAuthenticationForm);
+
+/***/ }),
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -587,7 +612,7 @@ Navigo.MATCH_REGEXP_FLAGS = '';
 /* harmony default export */ __webpack_exports__["default"] = (Navigo);
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(0);

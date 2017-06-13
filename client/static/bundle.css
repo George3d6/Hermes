@@ -18,6 +18,9 @@ a:hover {
   padding: 0 0 0 0 !important;
   margin: 0 0 0 0 !important; }
 
+.cursor_hover {
+  cursor: pointer; }
+
 .title_header {
   padding-left: 5% !important;
   padding-top: 26px !important; }
@@ -29,6 +32,12 @@ a:hover {
 .action_icon {
   display: inline-block;
   margin-right: 5% !important; }
+
+.inline_href {
+  display: inline-block; }
+
+.inline_content {
+  display: inline-block; }
 
 #root {
   text-align: center; }

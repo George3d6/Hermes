@@ -6,9 +6,9 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-    "strings"
 
 	"golang.org/x/crypto/scrypt"
 
@@ -52,9 +52,9 @@ func SerializeTokenMap() []byte {
 func DeserializeTokenMap(serialization []byte) {
 	tokenArr := strings.Split(string(serialization), "#|#")
 	for _, serializedToken := range tokenArr {
-        token := DeserializeToken([]byte(serializedToken))
-        tokenMap[token.Identifier] = token
-    }
+		token := DeserializeToken([]byte(serializedToken))
+		tokenMap[token.Identifier] = token
+	}
 }
 
 //Serialize gives a string (as a byte slice) represntation of a Token struct

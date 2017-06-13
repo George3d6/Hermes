@@ -37,25 +37,27 @@ func initHandlers(adminName string, adminPassword string) {
 			newFlSerialization := string(globalFileList.Serialize())
 			newTmSerialization := string(SerializeTokenMap())
 
-			if (oldTmSerialization != newTmSerialization) {
+			if oldTmSerialization != newTmSerialization {
 				oldTmSerialization = newTmSerialization
 
 				//save token map
 				tmSerializationFile, err := os.Create(Configuration.StatePath + "token_map.json")
 				logo.RuntimeError(err)
-				defer tmSerializationFile.Close()
 				_, err = io.Copy(tmSerializationFile, strings.NewReader(oldTmSerialization))
+				logo.RuntimeError(err)
+				err = tmSerializationFile.Close()
 				logo.RuntimeError(err)
 			}
 
-			if (oldFlSerialization != newFlSerialization) {
+			if oldFlSerialization != newFlSerialization {
 				oldFlSerialization = newFlSerialization
 
 				//save file list
 				fileListSerializationFile, err := os.Create(Configuration.StatePath + "file_list.json")
 				logo.RuntimeError(err)
-				defer fileListSerializationFile.Close()
 				_, err = io.Copy(fileListSerializationFile, strings.NewReader(oldFlSerialization))
+				logo.RuntimeError(err)
+				err = fileListSerializationFile.Close()
 				logo.RuntimeError(err)
 			}
 		}
@@ -85,7 +87,7 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 		expiration := time.Now().Add(24 * time.Hour)
 		authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
 		http.SetCookie(w, &authCookie)
-		//http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	} else {
 		http.Redirect(w, r, "/", http.StatusUnauthorized)
@@ -105,7 +107,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	//defer file.Close()
 	name := r.FormValue("name")
 	compression := r.FormValue("compression")
-	public := r.FormValue("public")
+	public := r.FormValue("ispublis")
+	logo.LogDebug("\n\nThe value of public is " + public + " \n\n")
+	logo.LogDebug("\n\nThe value of compression is " + compression + " \n\n")
 
 	ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
@@ -141,7 +145,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Session Id invalid\n`)
 		return
 	}
-	/* @TODO fix this, currently the comparison seems not to work
+	/*
+	@TODO fix this, currently the comparison seems not to work
 	logo.LogDebug(token.UploadSize < newFileModel.Size)
 	if token.UploadSize < newFileModel.Size {
 		fmt.Fprintf(w, `Trying to upload a file that is too big, your maximum upload size is: ` + strconv.Itoa(int(newFileModel.Size)))
@@ -161,7 +166,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if public == "true" {
+	if public == "true" || public == "on" {
 		UpdatePublicToken(newFileModel.Name)
 	}
 
@@ -207,29 +212,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 //List files
 func listFiles(w http.ResponseWriter, r *http.Request) {
-	//Doing the authentication
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		fmt.Fprintf(w, `Not authenticated\n`)
-		return
-	}
-	values := strings.Split(cookie.Value, "#|#")
-	if len(values) < 2 {
-		fmt.Fprintf(w, `Authentication cookie malformed\n`)
-		return
-	}
-	valid, token := ValidateSession(values[0], values[1])
-	if !valid {
-		fmt.Fprintf(w, `Session Id invalid\n`)
-		return
-	}
+
 	stringified := ""
-	for _, val := range token.OwnedFiles {
-		found, file := globalFileList.FindFile(val)
-		if found {
-			stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
-		}
-	}
+
 	publicToken := GetPublicToken()
 	for _, val := range publicToken.OwnedFiles {
 		found, file := globalFileList.FindFile(val)
@@ -237,6 +222,81 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 			stringified += file.Name + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + file.Compression + "#|#"
 		}
 	}
+
+	//Doing the authentication
+	cookie, err := r.Cookie("auth")
+	if err != nil {
+		fmt.Fprintf(w, stringified)
+		return
+	}
+	values := strings.Split(cookie.Value, "#|#")
+	if len(values) < 2 {
+		fmt.Fprintf(w, stringified)
+		return
+	}
+	valid, token := ValidateSession(values[0], values[1])
+	if !valid {
+		fmt.Fprintf(w, stringified)
+		return
+	}
+
+	for _, val := range token.OwnedFiles {
+		found, file := globalFileList.FindFile(val)
+		if found {
+			stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		}
+	}
+
 	fmt.Fprintf(w, stringified)
 	return
+}
+
+//getFile
+func getFile(w http.ResponseWriter, r *http.Request) {
+
+	fileName := r.URL.Query().Get("file")
+	publicToken := GetPublicToken()
+
+	//There's actually not a build in find '( ...
+	//also the list should probably be sroted and I should implement a basic search function
+	for _, val := range publicToken.OwnedFiles {
+		if val == fileName {
+			found, file := globalFileList.FindFile(val)
+			if found {
+				w.Header().Set("Content-Disposition", "attachment; filename=" + file.Name)
+				http.ServeFile(w, r, file.Path)
+				return
+			}
+		}
+	}
+
+	//Doing the authentication
+	cookie, err := r.Cookie("auth")
+	if err != nil {
+		fmt.Fprintf(w, "File is not public and you are not authenticated")
+		return
+	}
+	values := strings.Split(cookie.Value, "#|#")
+	if len(values) < 2 {
+		fmt.Fprintf(w, "File is not public and you are not authenticated")
+		return
+	}
+	valid, token := ValidateSession(values[0], values[1])
+	if !valid {
+		fmt.Fprintf(w, "File is not public and you are not authenticated")
+		return
+	}
+
+	for _, val := range token.OwnedFiles {
+		if val == fileName {
+			found, file := globalFileList.FindFile(val)
+			if found {
+				w.Header().Set("Content-Disposition", "attachment; filename=" + file.Name)
+				http.ServeFile(w, r, file.Path)
+				return
+			}
+		}
+	}
+
+	 fmt.Fprintf(w, "File not found")
 }
