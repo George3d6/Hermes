@@ -64,8 +64,8 @@ type FileList struct {
 
 //Serialize gives a string (as a byte slice) represntation of a FileList struct
 func (list *FileList) Serialize() []byte {
-	mutex.RLock()
-	defer mutex.RUnlock()
+	list.mutex.RLock()
+	defer list.mutex.RUnlock()
 	var serialization string
 	var stringifiedFiles []string = []string{}
 	for _, file := range list.fileList {
@@ -89,8 +89,8 @@ func DeserializeFileList(serialization []byte) FileList {
 //AddFile adds a file to the list if a file with the same name doesn't exist and return true
 //If a file with the same name exists it does nothing and returns false
 func (list *FileList) AddFile(file FileModel) bool {
-	mutex.Lock()
-	defer mutex.Unlock()
+	list.mutex.Lock()
+	defer list.mutex.Unlock()
 	exists, _ := list.FindFile(file.Name, false)
 	if exists {
 		return false
@@ -103,8 +103,8 @@ func (list *FileList) AddFile(file FileModel) bool {
 //RemoveFile removes a file from the list if it exists and returns true
 //If the file doesn't exist it returns false
 func (list *FileList) RemoveFile(name string) (bool, FileModel) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	list.mutex.Lock()
+	defer list.mutex.Unlock()
 	var newList []FileModel = make([]FileModel, 0, len(list.fileList)-1)
 	var success bool = false
 	var removedFile FileModel
@@ -121,21 +121,21 @@ func (list *FileList) RemoveFile(name string) (bool, FileModel) {
 	return success, removedFile
 }
 
-//RemoveFile removes a file from the list if it exists and delets it from the fs if it exists and returns true
+//DeleteFile removes a file from the list if it exists and delets it from the fs if it exists and returns true
 //If either operation was unsuecesful it returns false and the file list remains unchanged
 //If the file doesn't exist it returns false
 func (list *FileList) DeleteFile(name string) (bool, FileModel) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	list.mutex.Lock()
+	defer list.mutex.Unlock()
 	var success bool
 	var fileDeleted FileModel
 	var newList []FileModel = make([]FileModel, 0, len(list.fileList)-1)
 	for _, file := range list.fileList {
-		if !(file.Name == name) {
+		if file.Name != name {
 			//@TODO: Look into doing this more efficiently using copy or a similar mechanism
 			newList = append(newList, file)
 		} else {
-			success = file.Delete()
+			success = !file.Delete()
 			fileDeleted = file
 			if !success {
 				newList = append(newList, file)
@@ -151,12 +151,12 @@ func (list *FileList) DeleteFile(name string) (bool, FileModel) {
 func (list *FileList) FindFile(name string, lock ...bool) (bool, FileModel) {
 	if len(lock) > 0 {
 		if lock[0] {
-			mutex.RLock()
-			defer mutex.RUnlock()
+			list.mutex.RLock()
+			defer list.mutex.RUnlock()
 		}
 	} else {
-		mutex.RLock()
-		defer mutex.RUnlock()
+		list.mutex.RLock()
+		defer list.mutex.RUnlock()
 	}
 	for _, file := range list.fileList {
 		if file.Name == name {
@@ -169,8 +169,8 @@ func (list *FileList) FindFile(name string, lock ...bool) (bool, FileModel) {
 //CleanUp is an efficient routine for cleaning up the list of old files and deleting old files
 func (list *FileList) CleanUp() {
 	//Could be a rlock and than a lock but this way is probably faster in reality
-	mutex.Lock()
-	defer mutex.Unlock()
+	list.mutex.Lock()
+	defer list.mutex.Unlock()
 	var newList []FileModel = make([]FileModel, 0, len(list.fileList))
 	for _, file := range list.fileList {
 		if !file.Update() {

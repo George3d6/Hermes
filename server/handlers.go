@@ -140,36 +140,38 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Authentication cookie malformed\n`)
 		return
 	}
-	valid, token := ValidateSession(values[0], values[1])
-	if !valid {
-		fmt.Fprintf(w, `Session Id invalid\n`)
-		return
-	}
-	/*
-	@TODO fix this, currently the comparison seems not to work
-	logo.LogDebug(token.UploadSize < newFileModel.Size)
-	if token.UploadSize < newFileModel.Size {
-		fmt.Fprintf(w, `Trying to upload a file that is too big, your maximum upload size is: ` + strconv.Itoa(int(newFileModel.Size)))
-		return
-	}
-	*/
+	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
+		valid, token := ValidateSession(values[0], values[1])
+		if !valid {
+			fmt.Fprintf(w, `Session Id invalid\n`)
+			return false
+		}
+		/*
+			@TODO fix this, currently the comparison seems not to work
+			logo.LogDebug(token.UploadSize < newFileModel.Size)
+			if token.UploadSize < newFileModel.Size {
+				fmt.Fprintf(w, `Trying to upload a file that is too big, your maximum upload size is: ` + strconv.Itoa(int(newFileModel.Size)))
+				return
+			}
+		*/
 
-	if token.UploadNumber < 1 {
-		fmt.Fprint(w, "Reached maximum upload limit for this token/user\n")
-		return
-	}
+		if token.UploadNumber < 1 {
+			fmt.Fprint(w, "Reached maximum upload limit for this token/user\n")
+			return false
+		}
 
-	token.UploadNumber = token.UploadNumber - 1
-	token.OwnedFiles = append(token.OwnedFiles, newFileModel.Name)
-	if !ModifyToken(token) {
-		fmt.Fprint(w, "Internal server error, please try again and inform the administrator about this\n")
-		return
-	}
+		token.UploadNumber = token.UploadNumber - 1
+		token.OwnedFiles = append(token.OwnedFiles, newFileModel.Name)
+		(*tokenMap)[token.Identifier] = token
+		return true
 
-	if public == "true" || public == "on" {
-		UpdatePublicToken(newFileModel.Name)
-	}
-
+		if public == "true" || public == "on" {
+			var publicToken Token = (*tokenMap)["public"]
+			publicToken.ReadPermission = append(publicToken.ReadPermission, name)
+			(*tokenMap)["public"] = publicToken
+		}
+		return true
+	})
 	//Uploading
 	logo.LogDebug(newFileModel.Path)
 	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
@@ -212,63 +214,109 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 //List files
 func listFiles(w http.ResponseWriter, r *http.Request) {
-
-	stringified := ""
-
-	publicToken := GetPublicToken()
-	for _, val := range publicToken.OwnedFiles {
-		found, file := globalFileList.FindFile(val)
-		if found {
-			stringified += file.Name + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + file.Compression + "#|#"
+	RunUnderAuthRMutex(func(tokenMap *map[string]Token) interface{} {
+		stringified := ""
+		var oldNames map[string]bool = make(map[string]bool)
+		publicToken := (*tokenMap)["public"]
+		for _, val := range publicToken.OwnedFiles {
+			found, file := globalFileList.FindFile(val)
+			if found {
+				oldNames[file.Name] = true
+				stringified += file.Name + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + file.Compression + "#|#"
+			}
 		}
-	}
 
-	//Doing the authentication
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		fmt.Fprintf(w, stringified)
-		return
-	}
-	values := strings.Split(cookie.Value, "#|#")
-	if len(values) < 2 {
-		fmt.Fprintf(w, stringified)
-		return
-	}
-	valid, token := ValidateSession(values[0], values[1])
-	if !valid {
-		fmt.Fprintf(w, stringified)
-		return
-	}
-
-	for _, val := range token.OwnedFiles {
-		found, file := globalFileList.FindFile(val)
-		if found {
-			stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		//Doing the authentication
+		cookie, err := r.Cookie("auth")
+		if err != nil {
+			fmt.Fprintf(w, stringified)
+			return false
 		}
-	}
+		values := strings.Split(cookie.Value, "#|#")
+		if len(values) < 2 {
+			fmt.Fprintf(w, stringified)
+			return false
+		}
+		valid, token := ValidateSession(values[0], values[1])
+		if !valid {
+			fmt.Fprintf(w, stringified)
+			return false
+		}
 
-	fmt.Fprintf(w, stringified)
+		for _, val := range token.OwnedFiles {
+			found, file := globalFileList.FindFile(val)
+			if found {
+				_, ok := oldNames[file.Name]
+				if !ok {
+					oldNames[file.Name] = true
+					stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+				}
+			}
+		}
+		stringified = strings.TrimRight(stringified, "#|#")
+		fmt.Fprintf(w, stringified)
+		return true
+	})
 	return
 }
 
 //getFile
 func getFile(w http.ResponseWriter, r *http.Request) {
+	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
+		fileName := r.URL.Query().Get("file")
+		publicToken := (*tokenMap)["public"]
 
-	fileName := r.URL.Query().Get("file")
-	publicToken := GetPublicToken()
-
-	//There's actually not a build in find '( ...
-	//also the list should probably be sroted and I should implement a basic search function
-	for _, val := range publicToken.OwnedFiles {
-		if val == fileName {
-			found, file := globalFileList.FindFile(val)
-			if found {
-				w.Header().Set("Content-Disposition", "attachment; filename=" + file.Name)
-				http.ServeFile(w, r, file.Path)
-				return
+		//There's actually not a build in find '( ...
+		//also the list should probably be sroted and I should implement a basic search function
+		for _, val := range publicToken.OwnedFiles {
+			if val == fileName {
+				found, file := globalFileList.FindFile(val)
+				if found {
+					w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
+					http.ServeFile(w, r, file.Path)
+					return true
+				}
 			}
 		}
-	}
+
+		//Doing the authentication
+		cookie, err := r.Cookie("auth")
+		if err != nil {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		values := strings.Split(cookie.Value, "#|#")
+		if len(values) < 2 {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		valid, token := ValidateSession(values[0], values[1])
+		if !valid {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+
+		for _, val := range token.OwnedFiles {
+			if val == fileName {
+				found, file := globalFileList.FindFile(val)
+				if found {
+					w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
+					http.ServeFile(w, r, file.Path)
+					return true
+				}
+			}
+		}
+
+		fmt.Fprintf(w, "File not found")
+		return true
+	})
+	return
+}
+
+//removeFile
+func removeFile(w http.ResponseWriter, r *http.Request) {
+	//@TODO FIND WAYS TO REMOVE FROM EVERY TOKEN.... ARGH -_-
+	fileName := r.URL.Query().Get("file")
 
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
@@ -289,14 +337,70 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 
 	for _, val := range token.OwnedFiles {
 		if val == fileName {
-			found, file := globalFileList.FindFile(val)
-			if found {
-				w.Header().Set("Content-Disposition", "attachment; filename=" + file.Name)
-				http.ServeFile(w, r, file.Path)
+			succ, _ := globalFileList.DeleteFile(fileName)
+			if !succ {
+				logo.LogDebug("Error deleting file")
+				fmt.Fprintf(w, "Error deleting file")
 				return
 			}
+			fmt.Fprintf(w, "Successfully removed file")
+			return
 		}
 	}
+	fmt.Fprintf(w, "File not found")
+}
 
-	 fmt.Fprintf(w, "File not found")
+//creatToken
+func createToken(w http.ResponseWriter, r *http.Request) {
+	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
+		//Doing the authentication
+		cookie, err := r.Cookie("auth")
+		if err != nil {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		values := strings.Split(cookie.Value, "#|#")
+		if len(values) < 2 {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		valid, token := ValidateSession(values[0], values[1])
+		if !valid {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+
+		if !token.GrantToken {
+			fmt.Fprintf(w, "You don't have token granting privilages")
+			return false
+		}
+
+		identifier := r.URL.Query().Get("identifier")
+		credentials := r.URL.Query().Get("credentials")
+		uploadNumber, err := strconv.ParseInt(r.URL.Query().Get("uploadNumber"), 10, 64)
+		logo.RuntimeError(err)
+		uploadSize, err := strconv.ParseInt(r.URL.Query().Get("uploadSize"), 10, 64)
+		logo.RuntimeError(err)
+		equal, err := strconv.ParseBool(r.URL.Query().Get("equal"))
+		logo.RuntimeError(err)
+		admin, err := strconv.ParseBool(r.URL.Query().Get("admin"))
+		logo.RuntimeError(err)
+
+		newTokenReadFiles := make([]string, len(token.OwnedFiles)+100)
+		newTokenOwneFiles := make([]string, len(token.OwnedFiles)+100)
+		if equal {
+			copy(newTokenReadFiles, token.OwnedFiles)
+		} else {
+			copy(newTokenOwneFiles, token.OwnedFiles)
+		}
+		newToken := MakeToken(identifier, credentials, newTokenReadFiles, uploadSize, uploadNumber, newTokenOwneFiles, admin, []string{}, []string{})
+		if _, ok := (*tokenMap)[identifier]; ok {
+			fmt.Fprintf(w, "Token with said name already exists")
+			return false
+		} else {
+			fmt.Fprintf(w, "Token was added")
+			(*tokenMap)[identifier] = newToken
+		}
+		return true
+	})
 }

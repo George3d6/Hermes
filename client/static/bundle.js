@@ -85,18 +85,25 @@ router_1["default"].on('/files/', function () {
     listFiles_1["default"]().then(function (answer) {
         var files = [];
         answer.split('#|#').forEach(function (stringifiedFile) {
+            if (stringifiedFile === '') {
+                return;
+            }
             var fileElements = stringifiedFile.split('|#|');
             files.push(new file_1["default"](fileElements[0], parseInt(fileElements[1]), fileElements[2]));
             return files;
         });
         document.getElementById('file_list').insertAdjacentHTML('beforeend', "<p id=\"close_file_view_holder\"><a href=\"/#!\" id=\"close_file_view\"><i class=\"close icon big\"></i></a></p>");
         files.forEach(function (f) {
-            var fileDies = f.death;
-            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge file middle aligned icon cursor_hover\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDies + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
+            var fileDies = new Date(f.death * 1000);
+            var fileDiesString = fileDies.getUTCFullYear() + "-" + fileDies.getUTCMonth() + "-" + fileDies.getUTCDay() + " " + fileDies.getUTCHours() + ":" + fileDies.getUTCMinutes() + ":" + fileDies.getUTCSeconds();
+            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge file middle aligned icon cursor_hover\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDiesString + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                <i class=\"huge trash middle aligned icon cursor_hover\" onclick=\"const xhr = new XMLHttpRequest();xhr.open('GET', '/delete/file/?file=" + f.name + "');xhr.send(null);\"></i>\n                </div>\n            </div>\n            ");
         });
     })["catch"](function (err) {
         console.log("Something went horribly wrong: " + err);
     });
+}).resolve();
+router_1["default"].on('/permission/', function () {
+    document.getElementById('permission_view').style.display = 'inline-block';
 }).resolve();
 router_1["default"].on('/', function () {
     document.getElementById('file_list').innerHTML = '';
@@ -131,7 +138,7 @@ exports.__esModule = true;
 var listFiles = function () {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/list/");
+        xhr.open("GET", "/get/list/");
         xhr.onload = function () {
             if (xhr.status === 200) {
                 resolve(xhr.responseText);

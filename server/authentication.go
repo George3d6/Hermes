@@ -21,7 +21,7 @@ var MaxInt int64 = int64(math.Pow(2, 62))
 //Some global variables
 var salt []byte = []byte("")
 var tokenMap map[string]Token = make(map[string]Token)
-var mutex sync.RWMutex = sync.RWMutex{}
+var authMutex sync.RWMutex = sync.RWMutex{}
 
 //Toke structure
 type Token struct {
@@ -77,53 +77,23 @@ func MakeToken(identifier string, credentials string, readPermission []string, u
 		OwnedFiles: ownedFiles, GrantToken: grantToken, Readers: readers, Equals: equals}
 }
 
-//AddToken adds a token to the map of tokens
-func AddToken(newToken Token) bool {
-	mutex.Lock()
-	if _, exists := tokenMap[newToken.Identifier]; exists {
-		mutex.Unlock()
-		return false
-	}
-	tokenMap[newToken.Identifier] = newToken
-	mutex.Unlock()
-	return true
+func RunUnderAuthWMutex(task func(*map[string]Token) interface{}) interface{} {
+	authMutex.Lock()
+	result := task(&tokenMap)
+	authMutex.Unlock()
+	return result
 }
 
-//ModifyToken modifies a token in the map
-func ModifyToken(newToken Token) bool {
-	mutex.Lock()
-	if _, exists := tokenMap[newToken.Identifier]; !exists {
-		mutex.Unlock()
-		return false
-	}
-	tokenMap[newToken.Identifier] = newToken
-	mutex.Unlock()
-	return true
-}
-
-//GetPublicToken checks the public token
-func GetPublicToken() Token {
-	mutex.RLock()
-	token := tokenMap["public"]
-	mutex.RUnlock()
-	return token
-}
-
-//UpdatePublicToken update the public token, multiple threads can do it at the same time so we can't do it though the modify method
-func UpdatePublicToken(filename string) {
-	mutex.Lock()
-	newPublicToken := tokenMap["public"]
-	newPublicToken.OwnedFiles = append(newPublicToken.OwnedFiles, filename)
-	tokenMap["public"] = newPublicToken
-	mutex.Unlock()
-	return
+func RunUnderAuthRMutex(task func(*map[string]Token) interface{}) interface{} {
+	authMutex.RLock()
+	result := task(&tokenMap)
+	authMutex.RUnlock()
+	return result
 }
 
 //ValidateSession checks the validty of a token and return the correspondent structure if the token is valid
 func ValidateSession(identifier string, sessionId string) (bool, Token) {
-	mutex.RLock()
 	requestedToken := tokenMap[identifier]
-	mutex.RUnlock()
 	if bytes.Equal(hashCredentials(sessionId), requestedToken.sessionIdHash) {
 		return true, requestedToken
 	}
@@ -133,16 +103,12 @@ func ValidateSession(identifier string, sessionId string) (bool, Token) {
 
 //ValidateToke validates an ongoing session
 func ValidateToke(identifier string, credentials string) (bool, string) {
-	mutex.RLock()
 	requestedToken := tokenMap[identifier]
-	mutex.RUnlock()
 	if bytes.Equal(hashCredentials(credentials), requestedToken.Hash) {
 		random := rand.New(rand.NewSource(time.Now().Unix() - time.Now().UnixNano()))
 		sessionId := strconv.Itoa(random.Int())
 		requestedToken.sessionIdHash = hashCredentials(sessionId)
-		mutex.Lock()
 		tokenMap[identifier] = requestedToken
-		mutex.Unlock()
 		return true, sessionId
 	}
 	logo.LogDebug("Someone used identifier '" + identifier + "' in order to try accessing a token for which he didn't have credentials")
@@ -170,10 +136,10 @@ func InitializeAuthentication(theSalt []byte) {
 func InitializeAdmin(theSalt []byte, name string, password string) {
 	adminToken := MakeToken(name, password, []string{}, MaxInt, MaxInt, []string{}, true, []string{}, []string{})
 	publicToken := MakeToken("public", "", []string{}, 0, 0, []string{}, false, []string{}, []string{})
-	if _, ok := tokenMap[adminToken.Identifier]; ok {
-		AddToken(adminToken)
+	if _, ok := tokenMap[adminToken.Identifier]; !ok {
+		tokenMap[adminToken.Identifier] = adminToken
 	}
-	if _, ok := tokenMap[publicToken.Identifier]; ok {
-		AddToken(publicToken)
+	if _, ok := tokenMap[publicToken.Identifier]; !ok {
+		tokenMap[publicToken.Identifier] = publicToken
 	}
 }

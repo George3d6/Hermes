@@ -2,7 +2,7 @@
 const listFiles = () => {
     return new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", "/list/");
+        xhr.open("GET", "/get/list/");
         xhr.onload = () => {
             if (xhr.status === 200) {
                 resolve(xhr.responseText);

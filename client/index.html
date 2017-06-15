@@ -17,6 +17,41 @@
             <a href="/#!/permission"><i class="edit icon big action_icon"></i></a>
         </div>
     </div>
+
+    <div class="" id="permission_view">
+        <form class="ui form" id="sign_in_form" >
+  
+            <div class="field">
+                <label>identifier</label>
+                <input type="text" name="identifier" id="identifier_field_make" placeholder="Identifier">
+            </div>
+            <div class="field">
+                <label>credentials</label>
+                <input type="password" name="credentials" id="credentials_field_make" placeholder="credentials">
+            </div>
+
+            <div class="field">
+                <label>uploadNumber</label>
+                <input type="text" name="uploadNumber" id="uploadNumber_field_make" placeholder="uploadNumber">
+            </div>
+            <div class="field">
+                <label>uploadSize</label>
+                <input type="password" name="uploadSize" id="uploadSize_field_make" placeholder="uploadSize">
+            </div>
+
+            <div class="field">
+                <label>equal</label>
+                <input type="text" name="identifier" id="equal_field_make" placeholder="equal">
+            </div>
+            <div class="field">
+                <label>admin</label>
+                <input type="password" name="credentials" id="admin_field_make" placeholder="admin">
+            </div>
+
+            <button class="ui blue button" type="submit" id="submit_auth">Create</button>
+        </form>
+    </div>
+
     <div class="" id="root">
         <div class="content_holder" id="main content_holder">
             <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post" action='/upload/'>
