@@ -52,11 +52,15 @@ func main() {
 	})
 
 	//API calls
-	http.HandleFunc("/authenticate/", engageAuthSession)
-	http.HandleFunc("/upload/", uploadFile)
+	http.HandleFunc("/post/file/", uploadFile)
+	http.HandleFunc("/post/token/", createToken)
+
 	http.HandleFunc("/get/list/", listFiles)
 	http.HandleFunc("/get/file/", getFile)
+	http.HandleFunc("/get/authentication/", engageAuthSession)
+
 	http.HandleFunc("/delete/file/", removeFile)
+
 
 	//veiw rendering
 	http.HandleFunc("/", serveHome)

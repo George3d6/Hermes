@@ -19,15 +19,15 @@
     </div>
 
     <div class="" id="permission_view">
-        <form class="ui form" id="sign_in_form" >
-  
+        `<p id="close_permission_view_holder"><a href="/#!" id="close_permission_view"><i class="close icon big"></i></a></p>`);
+        <form class="ui form" id="sign_in_form">
             <div class="field">
                 <label>identifier</label>
                 <input type="text" name="identifier" id="identifier_field_make" placeholder="Identifier">
             </div>
             <div class="field">
                 <label>credentials</label>
-                <input type="password" name="credentials" id="credentials_field_make" placeholder="credentials">
+                <input type="text" name="credentials" id="credentials_field_make" placeholder="credentials">
             </div>
 
             <div class="field">
@@ -36,19 +36,23 @@
             </div>
             <div class="field">
                 <label>uploadSize</label>
-                <input type="password" name="uploadSize" id="uploadSize_field_make" placeholder="uploadSize">
+                <input type="text" name="uploadSize" id="uploadSize_field_make" placeholder="uploadSize">
             </div>
 
             <div class="field">
-                <label>equal</label>
-                <input type="text" name="identifier" id="equal_field_make" placeholder="equal">
+                <div class="ui toggle checkbox">
+                    <label>equal</label>
+                    <input type="checkbox" name="identifier" id="equal_field_make" placeholder="equal">
+                </div>
             </div>
             <div class="field">
-                <label>admin</label>
-                <input type="password" name="credentials" id="admin_field_make" placeholder="admin">
+                <div class="ui toggle checkbox">
+                    <label>admin</label>
+                    <input type="checkbox" name="credentials" id="admin_field_make" placeholder="admin">
+                </div>
             </div>
 
-            <button class="ui blue button" type="submit" id="submit_auth">Create</button>
+            <button class="ui blue button" type="submit" id="submit_auth_make">Create</button>
         </form>
     </div>
 
@@ -92,7 +96,7 @@
         <div class="ui relaxed divided list" id="file_list"></div>
 
         <div class="ui modal" id="sign_in_form_modal">
-            <form class="ui form" id="sign_in_form" >
+            <form class="ui form" id="sign_in_form">
                 <div class="field">
                     <label>Username</label>
                     <input type="text" name="identifier" id="identifier_field" placeholder="Username">
@@ -117,8 +121,7 @@
     $('.ui.checkbox').checkbox();
     document.getElementById('sign_in_button').addEventListener('click', () => {
         $('#sign_in_form_modal')
-          .modal('show')
-        ;
+            .modal('show');
     });
 </script>
 <!--Websites own javascript-->

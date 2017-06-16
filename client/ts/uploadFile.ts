@@ -17,7 +17,7 @@ const uploadFile = (form_id: string) => {
                 formData.append('ispublis', isPublic);
                 alert(' the form value is:  ' + formData.get('ispublis'));
                 const xhr = new XMLHttpRequest();
-                xhr.open("POST", "/upload/");
+                xhr.open("POST", "/post/file/");
                 xhr.send(formData);
                 xhr.onreadystatechange = function() {
                     console.log(xhr.responseText + '  \n status is: ' + xhr.statusText);
