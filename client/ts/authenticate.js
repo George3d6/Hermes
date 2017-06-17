@@ -20,14 +20,15 @@ const enableAuthenticationForm = () => {
         const credentials = document.getElementById("credentials_field_make").value;
         const uploadNumber = document.getElementById("uploadNumber_field_make").value;
         const uploadSize = document.getElementById("uploadSize_field_make").value;
-        const equal = document.getElementById("equal_field_make").value;
-        const admin = document.getElementById("admin_field_make").value;
+        const equal = document.getElementById("equal_field_make").checked;
+        const admin = document.getElementById("admin_field_make").checked;
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", `/authenticate/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}`
+        xhr.open("GET", `/post/token/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}`
         + `&uploadSize=${uploadSize}&equal=${equal}&admin=${admin}`);
         xhr.send();
         xhr.onreadystatechange = () => {
-            document.getElementById('permission_view').display = "none";
+            window.location = "/#!";
+            document.getElementById('permission_view').style.display = 'none';
         }
     });
 }

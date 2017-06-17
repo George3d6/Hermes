@@ -389,10 +389,12 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		newTokenReadFiles := make([]string, len(token.OwnedFiles)+100)
 		newTokenOwneFiles := make([]string, len(token.OwnedFiles)+100)
 		if equal {
-			copy(newTokenReadFiles, token.OwnedFiles)
-		} else {
 			copy(newTokenOwneFiles, token.OwnedFiles)
+		} else {
+			copy(newTokenReadFiles, token.OwnedFiles)
 		}
+		fmt.Println(admin)
+		fmt.Println(equal)
 		newToken := MakeToken(identifier, credentials, newTokenReadFiles, uploadSize, uploadNumber, newTokenOwneFiles, admin, []string{}, []string{})
 		if _, ok := (*tokenMap)[identifier]; ok {
 			fmt.Fprintf(w, "Token with said name already exists")

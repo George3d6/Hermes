@@ -107,6 +107,7 @@ router_1["default"].on('/permission/', function () {
 }).resolve();
 router_1["default"].on('/', function () {
     document.getElementById('file_list').innerHTML = '';
+    document.getElementById('permission_view').style.display = 'none';
 }).resolve();
 
 /***/ }),
@@ -190,7 +191,7 @@ var uploadFile = function (form_id) {
                 formData.append('ispublis', isPublic);
                 alert(' the form value is:  ' + formData.get('ispublis'));
                 var xhr = new XMLHttpRequest();
-                xhr.open("POST", "/upload/");
+                xhr.open("POST", "/post/file/");
                 xhr.send(formData);
                 xhr.onreadystatechange = function () {
                     console.log(xhr.responseText + '  \n status is: ' + xhr.statusText);
@@ -210,15 +211,33 @@ exports["default"] = uploadFile;
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 const enableAuthenticationForm = () => {
+
     document.getElementById("submit_auth").addEventListener("click", e => {
         e.preventDefault();
         const identifier = document.getElementById("identifier_field").value;
         const credentials = document.getElementById("credentials_field").value;
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", `/authenticate/?identifier=${identifier}&credentials=${credentials}`);
+        xhr.open("GET", `/get/authentication//?identifier=${identifier}&credentials=${credentials}`);
         xhr.send();
-        xhr.onreadystatechange = function () {
+        xhr.onreadystatechange = () => {
             $('#sign_in_form_modal').modal('hide');
+        };
+    });
+
+    document.getElementById("submit_auth_make").addEventListener("click", e => {
+        e.preventDefault();
+        const identifier = document.getElementById("identifier_field_make").value;
+        const credentials = document.getElementById("credentials_field_make").value;
+        const uploadNumber = document.getElementById("uploadNumber_field_make").value;
+        const uploadSize = document.getElementById("uploadSize_field_make").value;
+        const equal = document.getElementById("equal_field_make").checked;
+        const admin = document.getElementById("admin_field_make").checked;
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `/post/token/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}` + `&uploadSize=${uploadSize}&equal=${equal}&admin=${admin}`);
+        xhr.send();
+        xhr.onreadystatechange = () => {
+            window.location = "/#!";
+            document.getElementById('permission_view').style.display = 'none';
         };
     });
 };
