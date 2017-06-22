@@ -10,66 +10,84 @@
 
 <body>
     <div class="ui grid" id="the_header">
-        <h1 class="six wide column title_header">Hermes</h1>
-        <div class="ten wide column top_action_holder">
+        <div class="seven wide column">
+            <div class="logo_header">
+                <img class="logo_img" src="/static/logo.png"></img>
+            </div>
+            <h1 class="title_header">Hermes</h1>
+        </div>
+        <div class="nine wide column top_action_holder">
             <a id="sign_in_button"><i class="sign in icon big action_icon"></i></a>
             <a href="/#!/files"><i class="browser icon big action_icon"></i></a>
-            <a href="/#!/permission"><i class="edit icon big action_icon"></i></a>
+            <a id="permission_view_button"><i class="edit icon big action_icon"></i></a>
         </div>
     </div>
 
-    <div class="" id="permission_view">
-        <p id="close_permission_view_holder"><a href="/#" id="close_permission_view"><i class="close icon big"></i></a></p>
+    <div class="ui modal" id="permission_view">
+        <p id="close_permission_view_holder"><i class="close icon big"></i></p>
         <form class="ui form" id="sign_in_form">
             <div class="field">
-                <label>identifier</label>
+                <label>The identifier</label>
                 <input type="text" name="identifier" id="identifier_field_make" placeholder="Identifier">
             </div>
             <div class="field">
-                <label>credentials</label>
+                <label>The password</label>
                 <input type="password" name="credentials" id="credentials_field_make" placeholder="credentials">
             </div>
 
             <div class="field">
-                <label>uploadNumber</label>
+                <label>Maximum number of files to upload</label>
                 <input type="text" name="uploadNumber" id="uploadNumber_field_make" placeholder="uploadNumber">
             </div>
             <div class="field">
-                <label>uploadSize</label>
+                <label>Maximum File Upload Size in Mb</label>
                 <input type="text" name="uploadSize" id="uploadSize_field_make" placeholder="uploadSize">
             </div>
 
-            <div class="field">
-                <div class="ui toggle checkbox">
-                    <label>equal</label>
-                    <input type="checkbox" name="identifier" id="equal_field_make" placeholder="equal">
+            <div class="fields">
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <label>Can read all my files</label>
+                        <input type="checkbox" name="identifier" id="reader_field_make" placeholder="reader">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <label>Can modify all my files</label>
+                        <input type="checkbox" name="identifier" id="writer_field_make" placeholder="writer">
+                    </div>
                 </div>
             </div>
-            <div class="field">
-                <div class="ui toggle checkbox">
-                    <label>admin</label>
-                    <input type="checkbox" name="credentials" id="admin_field_make" placeholder="admin">
+            <div class="fields">
+                <div class="field">
+                    <div class="ui toggle checkbox">
+                        <label>Is administrator</label>
+                        <input type="checkbox" name="credentials" id="admin_field_make" placeholder="admin">
+                    </div>
                 </div>
-            </div>
+                <div class="field">
 
-            <button class="ui blue button" type="submit" id="submit_auth_make">Create</button>
+                    <button class="ui blue button" type="submit" id="submit_auth_make">Create</button>
+                </div>
+            </div>
         </form>
     </div>
 
     <div class="" id="root">
         <div class="content_holder" id="main content_holder">
             <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post" action='/post/file/'>
-                <div class="fields">
-                    <div class="field">
-                        <input name="name" placeholder="File Name" type="text">
-                    </div>
-                    <div class="field">
-                        <label for="file" class="ui icon button" style="height:38px">
+
+                <div class="field">
+                    <input name="name" placeholder="File Name" type="text">
+                </div>
+                <div class="field">
+                    <label for="file" class="ui icon button" style="height:38px">
                     <i class="file icon"></i>
                     Upload File</label>
-                        <input name="file" type="file" id="file" style="display:none">
-                    </div>
+                    <input name="file" type="file" id="file" style="display:none">
+                </div>
 
+                <div class="fields">
                     <div class="field">
                         <select id="compression" name="compression" form="upload_form">
                   <option value="plain">Ucompressed</option>
@@ -77,20 +95,20 @@
                   <option value="xz">Xz</option>
                 </select>
                     </div>
-                </div>
-
-                <div class="fields">
+                    <div class="field">
+                        <input name="ttl" placeholder="Time to live in seconds" type="text">
+                    </div>
                     <div class="field">
                         <div class="ui toggle checkbox">
                             <input name="ispublis" type="checkbox" id="public_switch">
                             <label>Public</label>
                         </div>
                     </div>
-                    <div class="field">
-                        <input name="ttl" placeholder="Time to live in seconds" type="text">
-                    </div>
-                    <button class="ui button" type="submit" id="submit_form">Submit</button>
                 </div>
+
+
+                <button class="ui button field" type="submit" id="submit_form">Submit</button>
+
             </form>
         </div>
         <div class="ui relaxed divided list" id="file_list"></div>
@@ -121,6 +139,10 @@
     $('.ui.checkbox').checkbox();
     document.getElementById('sign_in_button').addEventListener('click', () => {
         $('#sign_in_form_modal')
+            .modal('show');
+    });
+    document.getElementById('permission_view_button').addEventListener('click', () => {
+        $('#permission_view')
             .modal('show');
     });
 </script>

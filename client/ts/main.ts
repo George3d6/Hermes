@@ -51,10 +51,6 @@ router.on('/files/', () => {
         })
 }).resolve();
 
-router.on('/permission/', () => {
-    document.getElementById('permission_view').style.display = 'inline-block';
-}).resolve();
-
 router.on('/', () => {
     document.getElementById('file_list').innerHTML = '';
     document.getElementById('permission_view').style.display = 'none';

@@ -102,9 +102,6 @@ router_1["default"].on('/files/', function () {
         console.log("Something went horribly wrong: " + err);
     });
 }).resolve();
-router_1["default"].on('/permission/', function () {
-    document.getElementById('permission_view').style.display = 'inline-block';
-}).resolve();
 router_1["default"].on('/', function () {
     document.getElementById('file_list').innerHTML = '';
     document.getElementById('permission_view').style.display = 'none';
@@ -236,9 +233,12 @@ const enableAuthenticationForm = () => {
         xhr.open("GET", `/post/token/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}` + `&uploadSize=${uploadSize}&equal=${equal}&admin=${admin}`);
         xhr.send();
         xhr.onreadystatechange = () => {
-            window.location = "/#!";
-            document.getElementById('permission_view').style.display = 'none';
+            $('#permission_view').modal('hide');
         };
+    });
+
+    document.getElementById("close_permission_view_holder").addEventListener("click", e => {
+        $('#permission_view').modal('hide');
     });
 };
 

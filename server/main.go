@@ -48,7 +48,7 @@ func main() {
 	//Static ressources serving
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./client/static"))))
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./client/static/favicon.ico")
+		http.ServeFile(w, r, "./client/static/logo.png")
 	})
 
 	//API calls
