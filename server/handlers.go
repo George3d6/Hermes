@@ -32,7 +32,7 @@ func initHandlers(adminName string, adminPassword string) {
 	//Loop to preserve state
 	go func() {
 		for {
-			//sleep
+			//wait
 			time.Sleep(1 * time.Second)
 			newFlSerialization := string(globalFileList.Serialize())
 			newTmSerialization := string(SerializeTokenMap())
@@ -62,6 +62,13 @@ func initHandlers(adminName string, adminPassword string) {
 			}
 		}
 	}()
+	//Loop to update token's file permissions
+	go func() {
+		for {
+			//wait
+			time.Sleep(10 * time.Second)
+		}
+	}()
 }
 
 //Server the index.html file
@@ -87,11 +94,12 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 		expiration := time.Now().Add(24 * time.Hour)
 		authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
 		http.SetCookie(w, &authCookie)
-		http.Redirect(w, r, "/", http.StatusFound)
-		return
 	} else {
 		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
 	}
+	http.Redirect(w, r, "/", http.StatusOK)
+	return
 }
 
 //parses multipart form and saves an image called "image" to a file
@@ -128,7 +136,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	newFileModel := FileModel{Path: Configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
-
+	fmt.Println("1")
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
 	if err != nil {
@@ -140,6 +148,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Authentication cookie malformed\n`)
 		return
 	}
+	fmt.Println("2")
 	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
@@ -172,10 +181,11 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		}
 		return true
 	})
+	fmt.Println("3")
 	//Uploading
 	logo.LogDebug(newFileModel.Path)
 	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
-
+	fmt.Println("4")
 	if logo.RuntimeError(err) {
 		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
 		return
@@ -208,6 +218,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Could not upload file, a similarly named file already exists\n`)
 		return
 	}
+	fmt.Println("5")
 	fmt.Fprintf(w, "Successfully uploaded file\n")
 	return
 }
