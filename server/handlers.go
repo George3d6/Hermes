@@ -67,6 +67,59 @@ func initHandlers(adminName string, adminPassword string) {
 		for {
 			//wait
 			time.Sleep(10 * time.Second)
+			RunUnderAuthWMutex(func(authMap *map[string]Token) interface{} {
+				//Synchronize permissions between readers and equals
+				for _, token := range (*authMap) {
+					for _, equalId := range token.Equals {
+						equal := (*authMap)[equalId]
+						if (len(equal.OwnedFiles) != len(token.OwnedFiles)) {
+							//@TODO see how the hell the copy function works
+							//Extend capacity of first array than copy ~!?
+							//Extend length or capacity ? Does it matter ??
+							//Pressumably length ? How do I extend length ?
+							for _, ele := range token.OwnedFiles {
+								equal.OwnedFiles = append(equal.OwnedFiles, ele)
+							}
+							tokenMap[equal.Identifier] = equal
+						}
+					}
+					for _, readerId := range token.Equals {
+						reader := (*authMap)[readerId]
+						if (len(reader.ReadPermission) != len(token.ReadPermission)) {
+							for _, ele := range token.ReadPermission {
+								reader.ReadPermission = append(reader.ReadPermission, ele)
+							}
+							tokenMap[reader.Identifier] = reader
+						}
+					}
+				}
+				//Remove duplicates
+				for _, token := range (*authMap) {
+					var alreadyPresentR map[string]bool = make(map[string]bool)
+					var newRFileList []string
+					for _, fileName := range token.ReadPermission {
+						_, exists := alreadyPresentR[fileName]
+						if (!exists) {
+							alreadyPresentR[fileName] = true
+							newRFileList = append(newRFileList, fileName)
+						}
+					}
+					token.ReadPermission = newRFileList
+
+					var alreadyPresentW map[string]bool = make(map[string]bool)
+					var newWFileList []string
+					for _, fileName := range token.OwnedFiles {
+						_, exists := alreadyPresentW[fileName]
+						if (!exists) {
+							alreadyPresentW[fileName] = true
+							newWFileList = append(newWFileList, fileName)
+						}
+					}
+					token.OwnedFiles = newWFileList
+					(*authMap)[token.Identifier] = token
+				}
+				return true
+			})
 		}
 	}()
 }
@@ -229,7 +282,7 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 		stringified := ""
 		var oldNames map[string]bool = make(map[string]bool)
 		publicToken := (*tokenMap)["public"]
-		for _, val := range publicToken.OwnedFiles {
+		for _, val := range publicToken.ReadPermission {
 			found, file := globalFileList.FindFile(val)
 			if found {
 				oldNames[file.Name] = true
@@ -254,7 +307,7 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 			return false
 		}
 
-		for _, val := range token.OwnedFiles {
+		for _, val := range token.ReadPermission {
 			found, file := globalFileList.FindFile(val)
 			if found {
 				_, ok := oldNames[file.Name]
@@ -392,21 +445,26 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		logo.RuntimeError(err)
 		uploadSize, err := strconv.ParseInt(r.URL.Query().Get("uploadSize"), 10, 64)
 		logo.RuntimeError(err)
-		equal, err := strconv.ParseBool(r.URL.Query().Get("equal"))
+		reader, err := strconv.ParseBool(r.URL.Query().Get("reader"))
+		logo.RuntimeError(err)
+		writer, err := strconv.ParseBool(r.URL.Query().Get("writer"))
 		logo.RuntimeError(err)
 		admin, err := strconv.ParseBool(r.URL.Query().Get("admin"))
 		logo.RuntimeError(err)
 
 		newTokenReadFiles := make([]string, len(token.OwnedFiles)+100)
 		newTokenOwneFiles := make([]string, len(token.OwnedFiles)+100)
-		if equal {
-			copy(newTokenOwneFiles, token.OwnedFiles)
-		} else {
-			copy(newTokenReadFiles, token.OwnedFiles)
+		if reader {
+			copy(newTokenOwneFiles, token.ReadPermission)
+			token.Readers = append(token.Readers, identifier)
 		}
-		fmt.Println(admin)
-		fmt.Println(equal)
+		if writer {
+			copy(newTokenReadFiles, token.OwnedFiles)
+			token.Equals = append(token.Equals, identifier)
+		}
+
 		newToken := MakeToken(identifier, credentials, newTokenReadFiles, uploadSize, uploadNumber, newTokenOwneFiles, admin, []string{}, []string{})
+
 		if _, ok := (*tokenMap)[identifier]; ok {
 			fmt.Fprintf(w, "Token with said name already exists")
 			return false

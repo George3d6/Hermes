@@ -227,10 +227,11 @@ const enableAuthenticationForm = () => {
         const credentials = document.getElementById("credentials_field_make").value;
         const uploadNumber = document.getElementById("uploadNumber_field_make").value;
         const uploadSize = document.getElementById("uploadSize_field_make").value;
-        const equal = document.getElementById("equal_field_make").checked;
+        const reader = document.getElementById("reader_field_make").checked;
+        const writer = document.getElementById("writer_field_make").checked;
         const admin = document.getElementById("admin_field_make").checked;
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", `/post/token/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}` + `&uploadSize=${uploadSize}&equal=${equal}&admin=${admin}`);
+        xhr.open("GET", `/post/token/?identifier=${identifier}&credentials=${credentials}&uploadNumber=${uploadNumber}` + `&uploadSize=${uploadSize}&reader=${reader}&writer=${writer}&admin=${admin}`);
         xhr.send();
         xhr.onreadystatechange = () => {
             $('#permission_view').modal('hide');
