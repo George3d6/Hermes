@@ -5,7 +5,7 @@ const enableAuthenticationForm = () => {
         const identifier = document.getElementById("identifier_field").value;
         const credentials = document.getElementById("credentials_field").value;
         const xhr = new XMLHttpRequest();
-        xhr.open("GET", `/get/authentication//?identifier=${identifier}&credentials=${credentials}`);
+        xhr.open("GET", `/get/authentication/?identifier=${identifier}&credentials=${credentials}`);
         xhr.send();
         xhr.onreadystatechange = () => {
             $('#sign_in_form_modal')

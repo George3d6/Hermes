@@ -19,7 +19,6 @@ type configurationHolder struct {
 
 var Configuration = configurationHolder{}
 
-//Keep it down to one file ?
 func main() {
 	var configurationFile string = "config.json"
 	if len(os.Args) > 1 {
@@ -61,11 +60,10 @@ func main() {
 
 	http.HandleFunc("/delete/file/", removeFile)
 
-
 	//veiw rendering
 	http.HandleFunc("/", serveHome)
 
 	//Start Server
-	logo.LogDebug("Server will start running on port: " + Configuration.Port)
+	logo.LogDebug("Server will start running on port: " + Configuration.Port + "\n")
 	logo.RuntimeFatal(server.ListenAndServe())
 }

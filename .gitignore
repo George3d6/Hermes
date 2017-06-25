@@ -1,4 +1,9 @@
 storage
 client/node_modules
+client/package-lock.json
 hermes
 ser
+art
+art/*
+tests/node_modules
+tests/package-lock.json

@@ -21,9 +21,9 @@ var globalFileList FileList
 func initHandlers(adminName string, adminPassword string) {
 	fmt.Println(Configuration.StatePath + "file_list.json")
 	flcontent, err := ioutil.ReadFile(Configuration.StatePath + "file_list.json")
-	logo.RuntimeFatal(err)
+	logo.RuntimeError(err)
 	tmcontent, err := ioutil.ReadFile(Configuration.StatePath + "token_map.json")
-	logo.RuntimeFatal(err)
+	logo.RuntimeError(err)
 	globalFileList = DeserializeFileList(flcontent)
 	DeserializeTokenMap(tmcontent)
 	InitializeAdmin([]byte("the salt"), adminName, adminPassword)
@@ -65,41 +65,18 @@ func initHandlers(adminName string, adminPassword string) {
 	//Loop to update token's file permissions
 	go func() {
 		for {
-			//wait
-			time.Sleep(10 * time.Second)
+			//wait... no need to do this early, just once in a while to clean up the data model
+			//Duplicate/old files will not be seen by the user
+			time.Sleep(60 * time.Second)
 			RunUnderAuthWMutex(func(authMap *map[string]Token) interface{} {
-				//Synchronize permissions between readers and equals
-				for _, token := range (*authMap) {
-					for _, equalId := range token.Equals {
-						equal := (*authMap)[equalId]
-						if (len(equal.OwnedFiles) != len(token.OwnedFiles)) {
-							//@TODO see how the hell the copy function works
-							//Extend capacity of first array than copy ~!?
-							//Extend length or capacity ? Does it matter ??
-							//Pressumably length ? How do I extend length ?
-							for _, ele := range token.OwnedFiles {
-								equal.OwnedFiles = append(equal.OwnedFiles, ele)
-							}
-							tokenMap[equal.Identifier] = equal
-						}
-					}
-					for _, readerId := range token.Equals {
-						reader := (*authMap)[readerId]
-						if (len(reader.ReadPermission) != len(token.ReadPermission)) {
-							for _, ele := range token.ReadPermission {
-								reader.ReadPermission = append(reader.ReadPermission, ele)
-							}
-							tokenMap[reader.Identifier] = reader
-						}
-					}
-				}
-				//Remove duplicates
-				for _, token := range (*authMap) {
+				//Remove duplicates and files not in the main file list
+				for _, token := range *authMap {
 					var alreadyPresentR map[string]bool = make(map[string]bool)
 					var newRFileList []string
 					for _, fileName := range token.ReadPermission {
 						_, exists := alreadyPresentR[fileName]
-						if (!exists) {
+						found, _ := globalFileList.FindFile(fileName)
+						if !exists && found {
 							alreadyPresentR[fileName] = true
 							newRFileList = append(newRFileList, fileName)
 						}
@@ -110,7 +87,8 @@ func initHandlers(adminName string, adminPassword string) {
 					var newWFileList []string
 					for _, fileName := range token.OwnedFiles {
 						_, exists := alreadyPresentW[fileName]
-						if (!exists) {
+						found, _ := globalFileList.FindFile(fileName)
+						if !exists && found {
 							alreadyPresentW[fileName] = true
 							newWFileList = append(newWFileList, fileName)
 						}
@@ -118,6 +96,9 @@ func initHandlers(adminName string, adminPassword string) {
 					token.OwnedFiles = newWFileList
 					(*authMap)[token.Identifier] = token
 				}
+
+				globalFileList.CleanUp()
+
 				return true
 			})
 		}
@@ -151,7 +132,7 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusOK)
+	http.Redirect(w, r, "/", http.StatusFound)
 	return
 }
 
@@ -169,8 +150,6 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	compression := r.FormValue("compression")
 	public := r.FormValue("ispublis")
-	logo.LogDebug("\n\nThe value of public is " + public + " \n\n")
-	logo.LogDebug("\n\nThe value of compression is " + compression + " \n\n")
 
 	ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
@@ -178,6 +157,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Could not upload file, can't parse time to live(ttl)\n`)
 		return
 	}
+	ttl = ttl * 60 * 60
 
 	extension := ""
 	if compression == "gz" {
@@ -189,7 +169,6 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	newFileModel := FileModel{Path: Configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
-	fmt.Println("1")
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
 	if err != nil {
@@ -201,21 +180,13 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Authentication cookie malformed\n`)
 		return
 	}
-	fmt.Println("2")
-	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
+
+	isAuthenticatedInterface := RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
 			fmt.Fprintf(w, `Session Id invalid\n`)
 			return false
 		}
-		/*
-			@TODO fix this, currently the comparison seems not to work
-			logo.LogDebug(token.UploadSize < newFileModel.Size)
-			if token.UploadSize < newFileModel.Size {
-				fmt.Fprintf(w, `Trying to upload a file that is too big, your maximum upload size is: ` + strconv.Itoa(int(newFileModel.Size)))
-				return
-			}
-		*/
 
 		if token.UploadNumber < 1 {
 			fmt.Fprint(w, "Reached maximum upload limit for this token/user\n")
@@ -225,7 +196,6 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		token.UploadNumber = token.UploadNumber - 1
 		token.OwnedFiles = append(token.OwnedFiles, newFileModel.Name)
 		(*tokenMap)[token.Identifier] = token
-		return true
 
 		if public == "true" || public == "on" {
 			var publicToken Token = (*tokenMap)["public"]
@@ -234,11 +204,18 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		}
 		return true
 	})
-	fmt.Println("3")
+
+	isAuthenticated, ok := isAuthenticatedInterface.(bool)
+	if !ok {
+		panic("Run under auth mutex in file upload should always return bool")
+	}
+	if !bool(isAuthenticated) {
+		return
+	}
+
 	//Uploading
-	logo.LogDebug(newFileModel.Path)
 	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
-	fmt.Println("4")
+
 	if logo.RuntimeError(err) {
 		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
 		return
@@ -271,8 +248,12 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Could not upload file, a similarly named file already exists\n`)
 		return
 	}
-	fmt.Println("5")
-	fmt.Fprintf(w, "Successfully uploaded file\n")
+
+    if(r.FormValue("isAsync") == "true") {
+		fmt.Fprintf(w, "File uploaded sucessfully")
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 	return
 }
 
@@ -329,10 +310,9 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		fileName := r.URL.Query().Get("file")
 		publicToken := (*tokenMap)["public"]
-
 		//There's actually not a build in find '( ...
 		//also the list should probably be sroted and I should implement a basic search function
-		for _, val := range publicToken.OwnedFiles {
+		for _, val := range publicToken.ReadPermission {
 			if val == fileName {
 				found, file := globalFileList.FindFile(val)
 				if found {

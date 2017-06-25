@@ -15,6 +15,7 @@ const uploadFile = (form_id: string) => {
                 formData.append('file', (<any>evt.target).result);
                 formData.append('compression', (<HTMLInputElement>document.getElementById('compression')).value);
                 formData.append('ispublis', isPublic);
+                formData.append('isAsync', "true");
                 alert(' the form value is:  ' + formData.get('ispublis'));
                 const xhr = new XMLHttpRequest();
                 xhr.open("POST", "/post/file/");
