@@ -1,4 +1,4 @@
-<img src="client/static/logo.png" alt="" style="height:220px !important; display:inline-block">
+<img src="client/static/logo_mini.png" alt="" style="height:220px !important; display:inline-block">
 <h1 style="text-align:center" style="display:inline-block">
     Hermes
 </h1>
