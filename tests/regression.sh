@@ -27,7 +27,7 @@ sleep 2s;
 
 printf "\e[1;32m"
 
-printf "\nThe server \"should\" have been launched \"successfully\" !\n (if you encounter problems modify the sleep or re write the script to wait until stdout gets the server's launch message)\n"
+printf "\nThe server \"should\" have been launched \"successfully\" !\n(if you encounter problems modify the sleep or re write the script to wait until stdout gets the server's launch message)\n"
 
 printf "Running regression testing using phantomjs !\n\n"
 

@@ -1,5 +1,9 @@
-$text:rgb(34,34,34);
-$background: rgb(244, 244, 244);
+$text:rgb(54,54,54);
+$background: rgb(251,251,251);
+$background2: rgb(66,66,66);
+$text2: rgb(238,238,238);
+$background3: rgb(252,228,236);
+$text3: rgb(227,242,253);
 $action: rgb(100,181,246);
 $reaction: rgb(244,143,177);
 
@@ -8,8 +12,24 @@ $break-medium: 712px;
 $break-large: 1023px;
 
 @font-face {
-    font-family: "Fredericka";
-    src: url(../static/fonts/Fredericka_the_Great/FrederickatheGreat-Regular.ttf);
+    font-family: "Titillium-Thin";
+    src: url(../static/fonts/Titillium-Thin.otf);
+}
+
+@font-face {
+    font-family: "Titillium-LightItalic";
+    src: url(../static/fonts/Titillium-LightItalic.otf);
+}
+
+@font-face {
+    font-family: "Titillium-Bold";
+    src: url(../static/fonts/Titillium-Bold.otf);
+}
+
+body, html {
+    font-family: Titillium-Thin !important;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
 }
 
 body {
@@ -23,13 +43,16 @@ a {
 }
 
 a:hover {
-    color: hotpink;
+    color: $reaction;
 }
 
 #the_header {
+    background-color: $background3;
+    margin: 0 0 14px 0 !important;
+    padding-top:12px 0 0 0 !important;
     width:100%;
-    padding: 0 0 0 0 !important;
-    margin: 0 0 0 0 !important;
+    min-height: 13%;
+    box-shadow: 2px 2px 1px rgba(10,81,146,0.4);
 }
 
 .cursor_hover {
@@ -48,17 +71,31 @@ a:hover {
 }
 
 .title_header {
+    font-family: Titillium-Bold !important;
     padding-left:5% !important;
     display: inline-block;
     height:66px;
-    font-size: 24px;
+    font-size: 30px;
     vertical-align:top;
 }
 
 
 .top_action_holder {
     text-align:right;
-    padding-top:30px !important;
+    padding-top:42px !important;
+}
+
+#pitch {
+    font-family: Titillium-LightItalic !important;
+    font-size: 20px;
+    margin-top:18px;
+    margin-bottom:18px;
+}
+
+.bottom_action_holder {
+    text-align:right;
+    padding-right:22px !important;
+    padding-top:15px !important;
 }
 
 .action_icon {
@@ -76,6 +113,10 @@ a:hover {
 
 #root {
     text-align: center;
+    padding-left:5%;
+    padding-right:5%;
+    width:100%;
+    min-height:77%;
 }
 
 #content_holder  {
@@ -88,6 +129,8 @@ a:hover {
 }
 #upload_form {
     display: inline-block;
+    width:100%;
+    max-width:500px;
 }
 
 #sign_in_form {
@@ -102,10 +145,27 @@ a:hover {
 }
 
 .file_in_list {
-    width: 68%;
+    width: 64%;
+    min-width:280px;
     //max-width: 800px;
     text-align: left;
     display: inline-block;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    margin-bottom:14px;
+    padding-left:16px !important;
+}
+
+.file_in_list:hover {
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.files_icon:hover {
+    color: rgb(76,175,80) !important;
+}
+
+.trashed_icon:hover {
+    color: rgb(244,67,54) !important;
 }
 
 #close_file_view_holder {
@@ -123,5 +183,39 @@ a:hover {
 }
 
 #submit_form {
+  margin-top: 12px;
   width:100%!important;
+}
+
+
+#the_footer {
+    color: $text2;
+    background-color: $background2;
+    min-height:10%;
+    width: 101vw;
+    box-shadow: 1px 0px 1px 2px rgba(30,51,76,1);
+}
+
+.bottom-action {
+    color: $text2;
+}
+
+
+::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar
+{
+	width: 12px;
+	background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+	background-color: rgba(144,144,144,1);
 }

@@ -81,30 +81,45 @@ var file_1 = __webpack_require__(1);
 var authenticate_1 = __webpack_require__(5);
 uploadFile_1["default"]('upload_form');
 authenticate_1["default"]();
-router_1["default"].on('/files/', function () {
+var initFileListView = function () {
     listFiles_1["default"]().then(function (answer) {
+        document.getElementById('file_list').innerHTML = '';
         var files = [];
         answer.split('#|#').forEach(function (stringifiedFile) {
             if (stringifiedFile === '') {
                 return;
             }
             var fileElements = stringifiedFile.split('|#|');
-            files.push(new file_1["default"](fileElements[0], parseInt(fileElements[1]), fileElements[2]));
+            files.push(new file_1["default"](fileElements[0], fileElements[1], parseInt(fileElements[2])));
             return files;
         });
-        document.getElementById('file_list').insertAdjacentHTML('beforeend', "<p id=\"close_file_view_holder\"><a href=\"/#!\" id=\"close_file_view\"><i class=\"close icon big\"></i></a></p>");
+        document.getElementById('file_list').insertAdjacentHTML('beforeend', "<p id=\"close_file_view_holder\"><a href=\"/#!/empty/\" id=\"close_file_view\"><i class=\"close icon big\"></i></a></p>");
         files.forEach(function (f) {
             var fileDies = new Date(f.death * 1000);
             var fileDiesString = fileDies.getUTCFullYear() + "-" + fileDies.getUTCMonth() + "-" + fileDies.getUTCDay() + " " + fileDies.getUTCHours() + ":" + fileDies.getUTCMinutes() + ":" + fileDies.getUTCSeconds();
-            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge file middle aligned icon cursor_hover\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDiesString + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                <i class=\"huge trash middle aligned icon cursor_hover\" onclick=\"const xhr = new XMLHttpRequest();xhr.open('GET', '/delete/file/?file=" + f.name + "');xhr.send(null);\"></i>\n                </div>\n            </div>\n            ");
+            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge cloud download middle aligned icon cursor_hover files_icon\" id=\"download_" + f.name + "\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n             <i class=\"huge trash middle aligned icon cursor_hover trashed_icon\" id=\"trash_" + f.name + "\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDiesString + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
+            document.getElementById("trash_" + f.name).addEventListener('click', function (e) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '/delete/file/?file=' + f.name);
+                xhr.send(null);
+                console.log("Working");
+                initFileListView();
+            });
         });
     })["catch"](function (err) {
         console.log("Something went horribly wrong: " + err);
     });
+};
+window['initFileListView'] = initFileListView;
+router_1["default"].on('/files/', function () {
+    initFileListView();
 }).resolve();
 router_1["default"].on('/', function () {
+    initFileListView();
+}).resolve();
+router_1["default"].on('/empty/', function () {
     document.getElementById('file_list').innerHTML = '';
-    document.getElementById('permission_view').style.display = 'none';
+    console.log("HERE:", document.getElementById('file_list').innerHTML);
 }).resolve();
 
 /***/ }),
@@ -116,10 +131,14 @@ router_1["default"].on('/', function () {
 
 exports.__esModule = true;
 var FileModel = function () {
-    function FileModel(name, death, compression) {
+    function FileModel(name, compression, death, size) {
+        if (size === void 0) {
+            size = 0;
+        }
         this.name = name;
         this.death = death;
         this.compression = compression;
+        this.size = size;
     }
     return FileModel;
 }();
@@ -186,6 +205,7 @@ var uploadFile = function (form_id) {
                 formData.append('file', evt.target.result);
                 formData.append('compression', document.getElementById('compression').value);
                 formData.append('ispublis', isPublic);
+                formData.append('isAsync', "true");
                 alert(' the form value is:  ' + formData.get('ispublis'));
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", "/post/file/");

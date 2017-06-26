@@ -1,22 +1,38 @@
 @font-face {
-  font-family: "Fredericka";
-  src: url(../static/fonts/Fredericka_the_Great/FrederickatheGreat-Regular.ttf); }
+  font-family: "Titillium-Thin";
+  src: url(../static/fonts/Titillium-Thin.otf); }
+
+@font-face {
+  font-family: "Titillium-LightItalic";
+  src: url(../static/fonts/Titillium-LightItalic.otf); }
+
+@font-face {
+  font-family: "Titillium-Bold";
+  src: url(../static/fonts/Titillium-Bold.otf); }
+
+body, html {
+  font-family: Titillium-Thin !important;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0; }
 
 body {
-  color: #222222;
-  background-color: #f4f4f4; }
+  color: #363636;
+  background-color: #fbfbfb; }
 
 a {
   color: #64b5f6;
   cursor: pointer; }
 
 a:hover {
-  color: hotpink; }
+  color: #f48fb1; }
 
 #the_header {
+  background-color: #fce4ec;
+  margin: 0 0 14px 0 !important;
+  padding-top: 12px 0 0 0 !important;
   width: 100%;
-  padding: 0 0 0 0 !important;
-  margin: 0 0 0 0 !important; }
+  min-height: 13%;
+  box-shadow: 2px 2px 1px rgba(10, 81, 146, 0.4); }
 
 .cursor_hover {
   cursor: pointer; }
@@ -31,15 +47,27 @@ a:hover {
   height: 100%; }
 
 .title_header {
+  font-family: Titillium-Bold !important;
   padding-left: 5% !important;
   display: inline-block;
   height: 66px;
-  font-size: 24px;
+  font-size: 30px;
   vertical-align: top; }
 
 .top_action_holder {
   text-align: right;
-  padding-top: 30px !important; }
+  padding-top: 42px !important; }
+
+#pitch {
+  font-family: Titillium-LightItalic !important;
+  font-size: 20px;
+  margin-top: 18px;
+  margin-bottom: 18px; }
+
+.bottom_action_holder {
+  text-align: right;
+  padding-right: 22px !important;
+  padding-top: 15px !important; }
 
 .action_icon {
   display: inline-block;
@@ -52,7 +80,11 @@ a:hover {
   display: inline-block; }
 
 #root {
-  text-align: center; }
+  text-align: center;
+  padding-left: 5%;
+  padding-right: 5%;
+  width: 100%;
+  min-height: 77%; }
 
 #content_holder {
   display: inline-block;
@@ -63,7 +95,9 @@ a:hover {
   text-align: left; }
 
 #upload_form {
-  display: inline-block; }
+  display: inline-block;
+  width: 100%;
+  max-width: 500px; }
 
 #sign_in_form {
   padding: 40px 40px 40px 40px; }
@@ -75,9 +109,23 @@ a:hover {
   margin-left: 16%; }
 
 .file_in_list {
-  width: 68%;
+  width: 64%;
+  min-width: 280px;
   text-align: left;
-  display: inline-block; }
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-bottom: 14px;
+  padding-left: 16px !important; }
+
+.file_in_list:hover {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22); }
+
+.files_icon:hover {
+  color: #4caf50 !important; }
+
+.trashed_icon:hover {
+  color: #f44336 !important; }
 
 #close_file_view_holder {
   text-align: left; }
@@ -91,4 +139,28 @@ a:hover {
   display: hidden; }
 
 #submit_form {
+  margin-top: 12px;
   width: 100% !important; }
+
+#the_footer {
+  color: #eeeeee;
+  background-color: #424242;
+  min-height: 10%;
+  width: 101vw;
+  box-shadow: 1px 0px 1px 2px #1e334c; }
+
+.bottom-action {
+  color: #eeeeee; }
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #F5F5F5; }
+
+::-webkit-scrollbar {
+  width: 12px;
+  background-color: #F5F5F5; }
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #909090; }

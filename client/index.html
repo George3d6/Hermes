@@ -18,8 +18,8 @@
         </div>
         <div class="nine wide column top_action_holder">
             <a id="sign_in_button"><i class="sign in icon big action_icon"></i></a>
-            <a href="/#!/files"><i class="browser icon big action_icon"></i></a>
-            <a id="permission_view_button"><i class="edit icon big action_icon"></i></a>
+            <a id="file_list_button" href="/#!/files"><i class="list icon big action_icon"></i></a>
+            <a id="permission_view_button"><i class="lock icon big action_icon"></i></a>
         </div>
     </div>
 
@@ -74,6 +74,9 @@
     </div>
 
     <div class="" id="root">
+        <p id="pitch">
+            An easy to use, lightweight, file-server
+        </p>
         <div class="content_holder" id="main content_holder">
             <form class="ui form" id="upload_form" enctype="multipart/form-data" method="post" action='/post/file/'>
 
@@ -101,7 +104,7 @@
                     <div class="field">
                         <div class="ui toggle checkbox">
                             <input name="ispublis" type="checkbox" id="public_switch">
-                            <label>Public</label>
+                            <label>Is it public ?</label>
                         </div>
                     </div>
                 </div>
@@ -128,25 +131,81 @@
         </div>
 
     </div>
+    <footer class="ui grid" id="the_footer">
+        <div class="eight wide column">
+            <p style="padding-left:30px;">
+                If you enjoy this product please consider contributing to it with code, feedback or by spreading the word.
+            </p>
+        </div>
+        <div class="eight wide column bottom_action_holder">
+            <a id="github" class="bottom-action" target="_blank" href="https://github.com/George3d6"><i class="github icon big action_icon"></i>
+            </a>
+
+            <a id="git" class="bottom-action" target="_blank" href="https://git.cerebralab.com/explore/repos"><i class="git icon big action_icon"></i>
+            </a>
+
+            <a id="blog" class="bottom-action" target="_blank" href="https://blog.cerebralab.com"><i class="write icon big action_icon"></i>
+            </a>
+
+        </div>
+    </footer>
+
+    <!--Semantic UI dependencies -->
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="/static/semantic.min.js"></script>
+    <!--Semantic UI activation -->
+    <script>
+        $('#github').popup({
+            position: 'top center',
+            target: '#github',
+            content: 'Check out the project on Github'
+        });
+
+        $('#git').popup({
+            position: 'top center',
+            target: '#git',
+            content: 'Check out some of my other projects'
+        });
+
+
+        $('#blog').popup({
+            position: 'top center',
+            target: '#blog',
+            content: 'Check out some of my articles'
+        });
+
+        $('#sign_in_button').popup({
+            position: 'bottom center',
+            target: '#sign_in_button',
+            content: 'Sign in'
+        });
+
+        $('#file_list_button').popup({
+            position: 'bottom center',
+            target: '#file_list_button',
+            content: 'List files'
+        });
+
+        $('#permission_view_button').popup({
+            position: 'bottom center',
+            target: '#permission_view_button',
+            content: 'Add user'
+        });
+
+        $('.ui.dropdown').dropdown();
+        $('.ui.accordion').accordion();
+        $('.ui.checkbox').checkbox();
+        document.getElementById('sign_in_button').addEventListener('click', () => {
+            $('#sign_in_form_modal')
+                .modal('show');
+        });
+        document.getElementById('permission_view_button').addEventListener('click', () => {
+            $('#permission_view')
+                .modal('show');
+        });
+    </script>
+    <!--Websites own javascript-->
+    <script src="/static/bundle.js"></script>
 </body>
-<!--Semantic UI dependencies -->
-<script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
-<script src="/static/semantic.min.js"></script>
-<!--Semantic UI activation -->
-<script>
-    $('.ui.dropdown').dropdown();
-    $('.ui.accordion').accordion();
-    $('.ui.checkbox').checkbox();
-    document.getElementById('sign_in_button').addEventListener('click', () => {
-        $('#sign_in_form_modal')
-            .modal('show');
-    });
-    document.getElementById('permission_view_button').addEventListener('click', () => {
-        $('#permission_view')
-            .modal('show');
-    });
-</script>
-<!--Websites own javascript-->
-<script src="/static/bundle.js"></script>
 
 </html>

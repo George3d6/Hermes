@@ -62,6 +62,22 @@ type FileList struct {
 	mutex    sync.RWMutex
 }
 
+//RunOnFileList runs a function on each file in the internal file list under a mutex
+func (list *FileList) RunOnFileList(task func(fileList []FileModel) interface{}) interface{} {
+	list.mutex.Lock()
+	result := task(list.fileList)
+	list.mutex.Unlock()
+	return result
+}
+
+//ReadOnFileList runs a read-only function on each file in the internal file list under a mutex
+func (list *FileList) ReadOnFileList(task func(fileList []FileModel) interface{}) interface{} {
+	list.mutex.RLock()
+	result := task(list.fileList)
+	list.mutex.RUnlock()
+	return result
+}
+
 //Serialize gives a string (as a byte slice) represntation of a FileList struct
 func (list *FileList) Serialize() []byte {
 	list.mutex.RLock()

@@ -123,16 +123,19 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 	identifier := r.URL.Query().Get("identifier")
 	credentials := r.URL.Query().Get("credentials")
 
-	isValid, sessionId := ValidateToke(identifier, credentials)
-	if isValid {
-		expiration := time.Now().Add(24 * time.Hour)
-		authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
-		http.SetCookie(w, &authCookie)
-	} else {
-		http.Redirect(w, r, "/", http.StatusUnauthorized)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusFound)
+	RunUnderAuthWMutex(func(arg1 *map[string]Token) interface{} {
+		isValid, sessionId := ValidateToke(identifier, credentials, false)
+		if isValid {
+			expiration := time.Now().Add(24 * time.Hour)
+			authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
+			http.SetCookie(w, &authCookie)
+		} else {
+			http.Redirect(w, r, "/", http.StatusUnauthorized)
+			return true
+		}
+		http.Redirect(w, r, "/", http.StatusFound)
+		return false
+	})
 	return
 }
 
@@ -195,6 +198,19 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 		token.UploadNumber = token.UploadNumber - 1
 		token.OwnedFiles = append(token.OwnedFiles, newFileModel.Name)
+
+		for _, equalsName := range token.Equals {
+			equal := (*tokenMap)[equalsName]
+			equal.OwnedFiles = append(equal.OwnedFiles, newFileModel.Name)
+			(*tokenMap)[equal.Identifier] = equal
+		}
+
+		for _, readersName := range token.Readers {
+			reader := (*tokenMap)[readersName]
+			reader.ReadPermission = append(reader.ReadPermission, newFileModel.Name)
+			(*tokenMap)[reader.Identifier] = reader
+		}
+
 		(*tokenMap)[token.Identifier] = token
 
 		if public == "true" || public == "on" {
@@ -249,7 +265,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    if(r.FormValue("isAsync") == "true") {
+	if r.FormValue("isAsync") == "true" {
 		fmt.Fprintf(w, "File uploaded sucessfully")
 		return
 	}
@@ -261,43 +277,37 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 func listFiles(w http.ResponseWriter, r *http.Request) {
 	RunUnderAuthRMutex(func(tokenMap *map[string]Token) interface{} {
 		stringified := ""
-		var oldNames map[string]bool = make(map[string]bool)
-		publicToken := (*tokenMap)["public"]
-		for _, val := range publicToken.ReadPermission {
-			found, file := globalFileList.FindFile(val)
-			if found {
-				oldNames[file.Name] = true
-				stringified += file.Name + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + file.Compression + "#|#"
-			}
-		}
+
+		isAuthenticated := false
+		var token Token
 
 		//Doing the authentication
 		cookie, err := r.Cookie("auth")
-		if err != nil {
-			fmt.Fprintf(w, stringified)
-			return false
-		}
-		values := strings.Split(cookie.Value, "#|#")
-		if len(values) < 2 {
-			fmt.Fprintf(w, stringified)
-			return false
-		}
-		valid, token := ValidateSession(values[0], values[1])
-		if !valid {
-			fmt.Fprintf(w, stringified)
-			return false
-		}
-
-		for _, val := range token.ReadPermission {
-			found, file := globalFileList.FindFile(val)
-			if found {
-				_, ok := oldNames[file.Name]
-				if !ok {
-					oldNames[file.Name] = true
-					stringified += file.Name + "|#|" + strconv.Itoa(int(file.Size)) + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "#|#"
+		if err == nil {
+			values := strings.Split(cookie.Value, "#|#")
+			if len(values) == 2 {
+				valid, theToken := ValidateSession(values[0], values[1])
+				if valid {
+					token = theToken
+					isAuthenticated = true
 				}
 			}
 		}
+		globalFileList.ReadOnFileList(func(fileList []FileModel) interface{} {
+			for _, file := range fileList {
+				if !isAuthenticated {
+					if IsPublic(file.Name) {
+						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "#|#"
+					}
+				} else if isAuthenticated {
+					if token.IsReader(file.Name) {
+						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "#|#"
+					}
+				}
+			}
+			return true
+		})
+
 		stringified = strings.TrimRight(stringified, "#|#")
 		fmt.Fprintf(w, stringified)
 		return true
@@ -309,18 +319,27 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 func getFile(w http.ResponseWriter, r *http.Request) {
 	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		fileName := r.URL.Query().Get("file")
-		publicToken := (*tokenMap)["public"]
 		//There's actually not a build in find '( ...
 		//also the list should probably be sroted and I should implement a basic search function
-		for _, val := range publicToken.ReadPermission {
-			if val == fileName {
-				found, file := globalFileList.FindFile(val)
-				if found {
-					w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
-					http.ServeFile(w, r, file.Path)
-					return true
-				}
-			}
+		found, file := globalFileList.FindFile(fileName)
+
+		if !found {
+			fmt.Fprintf(w, "File not found")
+			return false
+		}
+
+		sufix := ""
+		if file.Compression == "gz" {
+			sufix = ".gz";
+		}
+		if file.Compression == "xz" {
+			sufix = ".xz";
+		}
+
+		if IsPublic(file.Name) {
+			w.Header().Set("Content-Disposition", "attachment; filename="+file.Name+sufix)
+			http.ServeFile(w, r, file.Path)
+			return true
 		}
 
 		//Doing the authentication
@@ -340,15 +359,10 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 			return false
 		}
 
-		for _, val := range token.OwnedFiles {
-			if val == fileName {
-				found, file := globalFileList.FindFile(val)
-				if found {
-					w.Header().Set("Content-Disposition", "attachment; filename="+file.Name)
-					http.ServeFile(w, r, file.Path)
-					return true
-				}
-			}
+		if token.IsReader(file.Name) {
+			w.Header().Set("Content-Disposition", "attachment; filename="+file.Name+sufix)
+			http.ServeFile(w, r, file.Path)
+			return true
 		}
 
 		fmt.Fprintf(w, "File not found")
@@ -360,7 +374,7 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 //removeFile
 func removeFile(w http.ResponseWriter, r *http.Request) {
 	//@TODO FIND WAYS TO REMOVE FROM EVERY TOKEN.... ARGH -_-
-	fileName := r.URL.Query().Get("file")
+	filename := r.URL.Query().Get("file")
 
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
@@ -379,17 +393,15 @@ func removeFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, val := range token.OwnedFiles {
-		if val == fileName {
-			succ, _ := globalFileList.DeleteFile(fileName)
-			if !succ {
-				logo.LogDebug("Error deleting file")
-				fmt.Fprintf(w, "Error deleting file")
-				return
-			}
-			fmt.Fprintf(w, "Successfully removed file")
+	if token.IsOwner(filename) {
+		succ, _ := globalFileList.DeleteFile(filename)
+		if !succ {
+			logo.LogDebug("Error deleting file")
+			fmt.Fprintf(w, "Error deleting file")
 			return
 		}
+		fmt.Fprintf(w, "Successfully removed file")
+		return
 	}
 	fmt.Fprintf(w, "File not found")
 }
@@ -432,14 +444,18 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		admin, err := strconv.ParseBool(r.URL.Query().Get("admin"))
 		logo.RuntimeError(err)
 
-		newTokenReadFiles := make([]string, len(token.OwnedFiles)+100)
-		newTokenOwneFiles := make([]string, len(token.OwnedFiles)+100)
+		newTokenReadFiles := make([]string, 0, len(token.OwnedFiles) + 100)
+		newTokenOwneFiles := make([]string, 0, len(token.OwnedFiles) + 100)
 		if reader {
-			copy(newTokenOwneFiles, token.ReadPermission)
+			for _, name := range token.OwnedFiles {
+				newTokenReadFiles = append(newTokenReadFiles, name)
+			}
 			token.Readers = append(token.Readers, identifier)
 		}
 		if writer {
-			copy(newTokenReadFiles, token.OwnedFiles)
+			for _, name := range token.OwnedFiles {
+				newTokenOwneFiles = append(newTokenOwneFiles, name)
+			}
 			token.Equals = append(token.Equals, identifier)
 		}
 
@@ -450,8 +466,50 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 			return false
 		} else {
 			fmt.Fprintf(w, "Token was added")
+			(*tokenMap)[token.Identifier] = token
 			(*tokenMap)[identifier] = newToken
 		}
 		return true
 	})
 }
+
+/*
+//getTokens retunrs all the tokens you granted
+func getToken(w http.ResponseWriter, r *http.Request) {
+	RunUnderAuthRMutex(func(arg1 *map[string]Token) interface{} {
+		//Doing the authentication
+		cookie, err := r.Cookie("auth")
+		if err != nil {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		values := strings.Split(cookie.Value, "#|#")
+		if len(values) < 2 {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+		valid, token := ValidateSession(values[0], values[1])
+		if !valid {
+			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			return false
+		}
+
+		if !token.GrantToken {
+			fmt.Fprintf(w, "You don't have token granting privilages")
+			return false
+		}
+		stringified = ""
+		for _, tokenName := token.Readers {
+			stringified += tokenName + "|#|" + unsafeCredentials + "#|#"
+		}
+		for _, tokenName := token.Equals {
+			stringified += tokenName + "|#|" + unsafeCredentials + "#|#"
+		}
+
+		stringified = strings.TrimRight(stringified, "#|#")
+		fmt.Fprintf(w, stringified)
+		return true
+	})
+	return
+}
+*/

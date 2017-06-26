@@ -5,10 +5,13 @@ class FileModel {
     death: number;
     //Compression level (should be plain, gz or xz)
     compression: string;
-    constructor(name: string, death: number, compression: string) {
+    //Size of file in KB
+    size: number;
+    constructor(name: string, compression: string, death: number, size: number = 0) {
         this.name = name;
         this.death = death;
         this.compression = compression;
+        this.size = size;
     }
 }
 
