@@ -6,6 +6,8 @@ A minimalistic, easy to deploy, easy to use, self-contained file server.
 
 ##### Version 0.4.2
 
+Working example: https://hermes.cerebralab.com/
+
 ## Instalation
 
 ```bash
