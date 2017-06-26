@@ -2,4 +2,4 @@
 <h1 style="text-align:center">
     Hermes
 </h1>
-<h5>*Version 0.3.2</h5>
+<h5>*Version 0.4.2</h5>
