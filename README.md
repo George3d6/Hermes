@@ -1,12 +1,12 @@
 <img src="client/static/logo_mini.png" alt="" style="height:220px !important; display:inline-block">
 
-#Hermes
+# Hermes
 
 A minimalistic, easy to deploy, easy to use, self-contained file server.
 
-#####Version 0.4.2
+##### Version 0.4.2
 
-##Instalation
+## Instalation
 
 ```bash
 wget 'https://hermes.cerebralab.com/get/file/?file=Hermes.tar.gz' && tar -xvf Hermes.tar.gz && cd dist && ./hermes 'config.json' 'admin' 'password'
@@ -22,7 +22,7 @@ This link should authenticate you and display the main web interface. There are 
 
 Keep in mind if you are using a version prior to 1.0.0 you are likely to run into bugs or lack of a feature which you'd consider 'essential'. If any of the former happen to you please open an issue here and I will look into it as fast as possible.
 
-##Roadmap
+## Roadmap
 
 - Improve error&success communication to the client and display them in a friendly way to the user
 
@@ -34,12 +34,12 @@ Keep in mind if you are using a version prior to 1.0.0 you are likely to run int
 
 - Allow asynchronous upload for small files on all browsers (even those that don't fully support the File web API)
 
-##Development
+## Development
 
 This is a rather small project and I am uncertain as to how easy it is to read&understand&expand, that being said if anyone feels bored or finds himself using this software a lot and needing some extra feature, I would be overjoyed to welcome them as a contributor. Hopefully the information found here will help with that.
 
-###How to compile and run
-####Dependencies
+### How to compile and run
+#### Dependencies
 
 Currently there are the following dev dependencies in order to properly compile the server and client, in addition to this certain npm packages might have their own dependencies or restrictions that I am unaware of.
 
@@ -49,7 +49,7 @@ Currently there are the following dev dependencies in order to properly compile 
 - sassc version (?)
 - A linux distro
 
-####Server
+#### Server
 The whole process is rather easy, simply build the .go files inside server and then run using the default config.json after making sure you have all the directories needed. The following commands should accomplish that:
 
 ```bash
@@ -67,7 +67,7 @@ An easy way to test if the project is running on your machine is runing the regr
 cd tests && npm install && ./regression.sh
 ```
 
-####The client
+#### The client
 Currently the js client is built using typescript and bundled using webpack, the css is compiled from scss, building all those components will include the following steps:
 ```bash
 npm install; #Install all dependencies
@@ -75,20 +75,20 @@ webpack; #Compile typescript in the /ts folder into a bundle.js file placed in s
 sassc scss/main.scss static/bundle.css; #Compile the scss into a bundle.css files placed in static
 ```
 
-####Feedback and help
+#### Feedback and help
 In theory this should also work on BSD&OSX without much additional work, if anyone can confirm that and/or tell me how I could make some of the linux specific things compatible and/or make a pull request in order to do so himself, I would very much welcome that.
 
 As far as Windows is concerned I have no idea how much work would be needed to adapt this project to Windows since I haven't really got much experience coding on Windows, if you wish to make a pull request that makes this project windows-dev compatible I would also welcome that with open arms (though I'd have a hard time confirming if it works properly).
 
-###Where is dev work required ?
+### Where is dev work required ?
 
-####Testing
+#### Testing
 
 Currently this projects boast an incomplete regression and some defunct functional tests. I would like to increase the coverage of the regression and possibly split it into smaller tests.
 
 Once the code stabilizes a bit and if this project pick up traction past one or two users some unit tests would also be very welcome
 
-####Standardization and boilerplate removal
+#### Standardization and boilerplate removal
 
 Currently the authentication layer and the file list layer use slightly different mechanisms in order to ensure thread safety, I'm considering adapting them to use a more similar style.
 
@@ -96,13 +96,13 @@ There's a lot of boilerplate right now, in part due to the fact that I dislike r
 
 Currently the front-end is a mess, it should be re-organized in to better named files and maybe modularized a bit more.
 
-####Dev dependencies removal
+#### Dev dependencies removal
 
 Errors are handled using a personal logging & error handling library which, after working a bit on this project, I've realized is quite poorly written. For the sake of making this project more accessible I will work on taking that out and replacing it with boilerplate error handling or a more widely adopted library.
 
 If possible removing the dependency on semantic-ui would be nice, since that drags along JQuery with it and I find it can slow load and processing times down quite significantly on mobile devices or in areas with terrible connection.
 
-####Features
+#### Features
 
 Basically the ones mentioned in the 'chapter' above, as to their implementation... that may vary.
 
@@ -111,7 +111,7 @@ The hardest feature to think about right now is the ability to dispense quick lo
 There are also some deeply neste for loops in there that I'd love to get rid of, granted that it will not take away any generality (ie. force to write more boilerplate), after all even itterating through arrays of thousands of elements should take an
 insignificant amount of time, golang arrays and maps are quite fast.
 
-###Design goals
+### Design goals
 
 This file server was designed with two goals in mind:
 
