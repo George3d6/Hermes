@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 7);
+/******/ 	return __webpack_require__(__webpack_require__.s = 8);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -74,11 +74,35 @@
 
 
 exports.__esModule = true;
-var uploadFile_1 = __webpack_require__(4);
-var listFiles_1 = __webpack_require__(2);
-var router_1 = __webpack_require__(3);
-var file_1 = __webpack_require__(1);
-var authenticate_1 = __webpack_require__(5);
+exports.displayError = function (message) {
+    document.getElementById('error_holder').innerHTML = '';
+    document.getElementById('error_holder').insertAdjacentHTML('afterbegin', "\n    <div class=\"ui error message\">\n    <i class=\"close icon\" id=\"close_message\"></i>\n        <div class=\"header\">\n            There was an error\n        </div>\n        <p>\n            " + message + "\n        </p>\n    </div>\n    ");
+    setTimeout(function () {
+        document.getElementById('error_holder').innerHTML = '';
+    }, 2600);
+};
+exports.displayMessage = function (message) {
+    document.getElementById('error_holder').innerHTML = '';
+    document.getElementById('error_holder').insertAdjacentHTML('afterbegin', "\n    <div class=\"ui info message\">\n    <i class=\"close icon\" id=\"close_message\"></i>\n        <div class=\"header\">\n            Success\n        </div>\n        <p>\n            " + message + "\n        </p>\n    </div>\n    ");
+    setTimeout(function () {
+        document.getElementById('error_holder').innerHTML = '';
+    }, 2600);
+};
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+var uploadFile_1 = __webpack_require__(5);
+var listFiles_1 = __webpack_require__(3);
+var router_1 = __webpack_require__(4);
+var file_1 = __webpack_require__(2);
+var authenticate_1 = __webpack_require__(6);
+var views_1 = __webpack_require__(0);
 uploadFile_1["default"]('upload_form');
 authenticate_1["default"]();
 var initFileListView = function () {
@@ -102,6 +126,15 @@ var initFileListView = function () {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', '/delete/file/?file=' + f.name);
                 xhr.send(null);
+                xhr.onload = function () {
+                    console.log(xhr.responseText);
+                    var res = JSON.parse(xhr.responseText);
+                    if (res.status === "error") {
+                        views_1.displayError(res.message);
+                    } else {
+                        views_1.displayMessage(res.message);
+                    }
+                };
                 console.log("Working");
                 initFileListView();
             });
@@ -123,7 +156,7 @@ router_1["default"].on('/empty/', function () {
 }).resolve();
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -145,22 +178,29 @@ var FileModel = function () {
 exports["default"] = FileModel;
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 exports.__esModule = true;
+var views_1 = __webpack_require__(0);
 var listFiles = function () {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", "/get/list/");
         xhr.onload = function () {
-            if (xhr.status === 200) {
-                resolve(xhr.responseText);
-            } else {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.status === "error") {
+                    views_1.displayError(res.message);
+                } else {
+                    views_1.displayMessage(res.message);
+                }
                 reject(Error('Could not load files:' + xhr.statusText));
+            } catch (e) {
+                resolve(xhr.responseText);
             }
         };
         xhr.send(null);
@@ -169,14 +209,14 @@ var listFiles = function () {
 exports["default"] = listFiles;
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 exports.__esModule = true;
-var navigo_1 = __webpack_require__(6);
+var navigo_1 = __webpack_require__(7);
 var root = null;
 var useHash = true;
 var hash = '#!';
@@ -184,7 +224,7 @@ var router = new navigo_1["default"](root, useHash, hash);
 exports["default"] = router;
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -222,11 +262,15 @@ var uploadFile = function (form_id) {
 exports["default"] = uploadFile;
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__views__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__views___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__views__);
+
+
 const enableAuthenticationForm = () => {
 
     document.getElementById("submit_auth").addEventListener("click", e => {
@@ -238,6 +282,12 @@ const enableAuthenticationForm = () => {
         xhr.send();
         xhr.onreadystatechange = () => {
             $('#sign_in_form_modal').modal('hide');
+            const res = JSON.parse(xhr.responseText);
+            if (res.status === "error") {
+                __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__views__["displayError"])(res.message);
+            } else {
+                __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__views__["displayMessage"])(res.message);
+            }
         };
     });
 
@@ -255,6 +305,11 @@ const enableAuthenticationForm = () => {
         xhr.send();
         xhr.onreadystatechange = () => {
             $('#permission_view').modal('hide');
+            if (res.status === "error") {
+                __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__views__["displayError"])(res.message);
+            } else {
+                __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__views__["displayMessage"])(res.message);
+            }
         };
     });
 
@@ -266,7 +321,7 @@ const enableAuthenticationForm = () => {
 /* harmony default export */ __webpack_exports__["default"] = (enableAuthenticationForm);
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -659,10 +714,10 @@ Navigo.MATCH_REGEXP_FLAGS = '';
 /* harmony default export */ __webpack_exports__["default"] = (Navigo);
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(0);
+module.exports = __webpack_require__(1);
 
 
 /***/ })

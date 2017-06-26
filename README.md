@@ -9,7 +9,8 @@ A minimalistic, easy to deploy, easy to use, self-contained file server.
 ## Instalation
 
 ```bash
-wget 'https://hermes.cerebralab.com/get/file/?file=Hermes.tar.gz' && tar -xvf Hermes.tar.gz && cd dist && ./hermes 'config.json' 'admin' 'password'
+wget --content-disposition 'https://hermes.cerebralab.com/get/file/?file=Hermes.tar.gz' && tar -xvf Hermes.tar.gz && cd dist && ./hermes 'config.json' 'admin' 'password'
+
 ```
 
 That's it, you've deployed the Hermes file server, the last two parameters are the username and password of the initial administrator user, so consider changing them to something other than 'admin' and 'password'. To access it go to:

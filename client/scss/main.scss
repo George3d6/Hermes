@@ -46,6 +46,12 @@ a:hover {
     color: $reaction;
 }
 
+#error_holder {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+}
+
 #the_header {
     background-color: $background3;
     margin: 0 0 14px 0 !important;

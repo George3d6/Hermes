@@ -122,6 +122,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 	identifier := r.URL.Query().Get("identifier")
 	credentials := r.URL.Query().Get("credentials")
+	redirect := r.URL.Query().Get("redirect")
 
 	RunUnderAuthWMutex(func(arg1 *map[string]Token) interface{} {
 		isValid, sessionId := ValidateToke(identifier, credentials, false)
@@ -130,10 +131,18 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 			authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
 			http.SetCookie(w, &authCookie)
 		} else {
-			http.Redirect(w, r, "/", http.StatusUnauthorized)
+			if(redirect=="true") {
+				http.Redirect(w, r, "/", http.StatusUnauthorized)
+			} else {
+				fmt.Fprintf(w, `{"status":"error","message":"Your login credentials are not authorized"}`)
+			}
 			return true
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		if(redirect=="true") {
+			http.Redirect(w, r, "/", http.StatusFound)
+		} else {
+			fmt.Fprintf(w, `{"status":"ok","message":"Authentication successful"}`)
+		}
 		return false
 	})
 	return
@@ -146,7 +155,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile("file")
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, file can't be read\n`)
+		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, file can't be read"}`)
 		return
 	}
 	//defer file.Close()
@@ -157,7 +166,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, can't parse time to live(ttl)\n`)
+		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, can't parse time to live(ttl)"}`)
 		return
 	}
 	ttl = ttl * 60 * 60
@@ -175,24 +184,24 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
 	if err != nil {
-		fmt.Fprintf(w, `Not authenticated\n`)
+		fmt.Fprintf(w, `{"status":"error","message":"Not authenticated}`)
 		return
 	}
 	values := strings.Split(cookie.Value, "#|#")
-	if len(values) < 2 {
-		fmt.Fprintf(w, `Authentication cookie malformed\n`)
+	if len(values) != 2 {
+		fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed}`)
 		return
 	}
 
 	isAuthenticatedInterface := RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
-			fmt.Fprintf(w, `Session Id invalid\n`)
+			fmt.Fprintf(w, `{"status":"error","message":"Session Id invalid"}`)
 			return false
 		}
 
 		if token.UploadNumber < 1 {
-			fmt.Fprint(w, "Reached maximum upload limit for this token/user\n")
+			fmt.Fprint(w, `{"status":"error","message":"Reached maximum upload limit for this token/user"}`)
 			return false
 		}
 
@@ -233,7 +242,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
 
 	if logo.RuntimeError(err) {
-		fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
+		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 		return
 	}
 	defer permanentFile.Close()
@@ -242,7 +251,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "gz":
 		gzipped, err := gzip.NewWriterLevel(permanentFile, 6)
 		if logo.RuntimeError(err) {
-			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
+			fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 			return
 		}
 		defer gzipped.Close()
@@ -250,7 +259,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "xz":
 		xzw, err := xz.NewWriter(permanentFile)
 		if logo.RuntimeError(err) {
-			fmt.Fprintf(w, `Could not upload file, there was an internal file system error, try again in a few seconds\n`)
+			fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 			return
 		}
 		defer xzw.Close()
@@ -258,15 +267,15 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	case "plain":
 		io.Copy(permanentFile, file)
 	default:
-		fmt.Fprintf(w, "Wrong compression format\n")
+		fmt.Fprintf(w, `{"status":"error","message":"Wrong compression format"}`)
 	}
 	if !globalFileList.AddFile(newFileModel) {
-		fmt.Fprintf(w, `Could not upload file, a similarly named file already exists\n`)
+		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, a similarly named file already exists"}`)
 		return
 	}
 
 	if r.FormValue("isAsync") == "true" {
-		fmt.Fprintf(w, "File uploaded sucessfully")
+		fmt.Fprintf(w, `{"status":"error","message":"File uploaded sucessfully"}`)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -324,7 +333,7 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 		found, file := globalFileList.FindFile(fileName)
 
 		if !found {
-			fmt.Fprintf(w, "File not found")
+			fmt.Fprintf(w, `{"status":"error","message":"File not found"}`)
 			return false
 		}
 
@@ -345,17 +354,17 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 		//Doing the authentication
 		cookie, err := r.Cookie("auth")
 		if err != nil {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
 			return false
 		}
 		values := strings.Split(cookie.Value, "#|#")
-		if len(values) < 2 {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+		if len(values) != 2 {
+			fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
 			return false
 		}
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			fmt.Fprintf(w, `{"status":"error","message":"File is not public and you are not authenticated"}`)
 			return false
 		}
 
@@ -365,7 +374,7 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 			return true
 		}
 
-		fmt.Fprintf(w, "File not found")
+		fmt.Fprintf(w, `{"status":"error","message":"File not found"}`)
 		return true
 	})
 	return
@@ -379,31 +388,30 @@ func removeFile(w http.ResponseWriter, r *http.Request) {
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
 	if err != nil {
-		fmt.Fprintf(w, "File is not public and you are not authenticated")
+		fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
 		return
 	}
 	values := strings.Split(cookie.Value, "#|#")
-	if len(values) < 2 {
-		fmt.Fprintf(w, "File is not public and you are not authenticated")
+	if len(values) != 2 {
+		fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
 		return
 	}
 	valid, token := ValidateSession(values[0], values[1])
 	if !valid {
-		fmt.Fprintf(w, "File is not public and you are not authenticated")
+		fmt.Fprintf(w, `{"status":"error","message":"Session id is invalid, please relog"}`)
 		return
 	}
 
 	if token.IsOwner(filename) {
 		succ, _ := globalFileList.DeleteFile(filename)
 		if !succ {
-			logo.LogDebug("Error deleting file")
-			fmt.Fprintf(w, "Error deleting file")
+			fmt.Fprintf(w, `{"status":"error","message":"Error deleting file"}`)
 			return
 		}
-		fmt.Fprintf(w, "Successfully removed file")
+		fmt.Fprintf(w, `{"status":"ok","message":"Successfully removed file"}`)
 		return
 	}
-	fmt.Fprintf(w, "File not found")
+	fmt.Fprintf(w, `{"status":"error","message":"You don't have permission to delete this file"}`)
 }
 
 //creatToken
@@ -412,22 +420,22 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		//Doing the authentication
 		cookie, err := r.Cookie("auth")
 		if err != nil {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
 			return false
 		}
 		values := strings.Split(cookie.Value, "#|#")
-		if len(values) < 2 {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+		if len(values) != 2 {
+			fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
 			return false
 		}
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
-			fmt.Fprintf(w, "File is not public and you are not authenticated")
+			fmt.Fprintf(w, `{"status":"error","message":"Session id is invalid, please relog"}`)
 			return false
 		}
 
 		if !token.GrantToken {
-			fmt.Fprintf(w, "You don't have token granting privilages")
+			fmt.Fprintf(w, `{"status":"error","message":"You don't have the privilage to add a token"}`)
 			return false
 		}
 
@@ -462,7 +470,7 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		newToken := MakeToken(identifier, credentials, newTokenReadFiles, uploadSize, uploadNumber, newTokenOwneFiles, admin, []string{}, []string{})
 
 		if _, ok := (*tokenMap)[identifier]; ok {
-			fmt.Fprintf(w, "Token with said name already exists")
+			fmt.Fprintf(w, `{"status":"error","message":"Token with said name already exists"}`)
 			return false
 		} else {
 			fmt.Fprintf(w, "Token was added")

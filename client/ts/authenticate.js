@@ -1,3 +1,5 @@
+import {displayError, displayMessage} from './views'
+
 const enableAuthenticationForm = () => {
 
     document.getElementById("submit_auth").addEventListener("click",(e) => {
@@ -8,9 +10,13 @@ const enableAuthenticationForm = () => {
         xhr.open("GET", `/get/authentication/?identifier=${identifier}&credentials=${credentials}`);
         xhr.send();
         xhr.onreadystatechange = () => {
-            $('#sign_in_form_modal')
-              .modal('hide')
-            ;
+            $('#sign_in_form_modal').modal('hide');
+            const res = JSON.parse(xhr.responseText);
+            if(res.status === "error") {
+                displayError(res.message);
+            } else {
+                displayMessage(res.message);
+            }
         }
     });
 
@@ -28,16 +34,17 @@ const enableAuthenticationForm = () => {
         + `&uploadSize=${uploadSize}&reader=${reader}&writer=${writer}&admin=${admin}`);
         xhr.send();
         xhr.onreadystatechange = () => {
-            $('#permission_view')
-              .modal('hide')
-            ;
+            $('#permission_view').modal('hide');
+            if(res.status === "error") {
+                displayError(res.message);
+            } else {
+                displayMessage(res.message);
+            }
         }
     });
 
     document.getElementById("close_permission_view_holder").addEventListener("click", (e) => {
-        $('#permission_view')
-          .modal('hide')
-        ;
+        $('#permission_view').modal('hide');
     })
 }
 
