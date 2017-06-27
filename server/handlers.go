@@ -179,7 +179,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		extension = ".xz"
 	}
 
-	newFileModel := FileModel{Path: Configuration.FilePath + name + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
+	newFileModel := FileModel{Path: Configuration.FilePath + strings.Replace(name, "/", "wtf", -1) + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
 	//Doing the authentication
 	cookie, err := r.Cookie("auth")
