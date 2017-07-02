@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"math"
-	"math/rand"
-	"strconv"
+	"crypto/rand"
 	"strings"
 	"sync"
-	"time"
+	"log"
+	"strconv"
+
 
 	"golang.org/x/crypto/scrypt"
-
-	"git.cerebralab.com/george/logo"
 )
 
 //Some constants
@@ -119,14 +118,19 @@ func (token *Token) IsReader(filename string) bool {
 //Serialize gives a string (as a byte slice) represntation of a Token struct
 func (token *Token) Serialize() []byte {
 	serialization, err := json.Marshal(token)
-	logo.RuntimeError(err)
+	if err != nil {
+		log.Printf("There was a serialization error for a token %s", err)
+	}
 	return serialization
 }
 
 //DeserializeFileModel takes a byte slice and create a Token
 func DeserializeToken(serialization []byte) Token {
 	var newToken Token
-	logo.RuntimeError(json.Unmarshal(serialization, &newToken))
+	err := json.Unmarshal(serialization, &newToken)
+	if err != nil {
+
+	}
 	return newToken
 }
 
@@ -156,7 +160,7 @@ func ValidateSession(identifier string, sessionId string) (bool, Token) {
 	if bytes.Equal(hashCredentials(sessionId), requestedToken.sessionIdHash) {
 		return true, requestedToken
 	}
-	logo.LogDebug("Someone used identifier '" + identifier + "' in order to try accessing a token for which he didn't have credentials")
+	log.Println("Someone used identifier '" + identifier + "' in order to try accessing a token for which he didn't have credentials")
 	return false, requestedToken
 }
 
@@ -164,13 +168,28 @@ func ValidateSession(identifier string, sessionId string) (bool, Token) {
 func ValidateToke(identifier string, credentials string, cheat bool) (bool, string) {
 	requestedToken := tokenMap[identifier]
 	if bytes.Equal(hashCredentials(credentials), requestedToken.Hash) || cheat {
-		random := rand.New(rand.NewSource(time.Now().Unix() - time.Now().UnixNano()))
-		sessionId := strconv.Itoa(random.Int())
+		// Previous random seed: random := rand.New(rand.NewSource(time.Now().Unix() - time.Now().UnixNano()))
+		sessionIdBytes := make([]byte, 32)
+		_, err := rand.Read(sessionIdBytes)
+		if err != nil {
+			panic(err)
+			panic("This is a standard lib failure, thsi shouldn't happen, I am confused, help!, Trying again !")
+			_, err := rand.Read(sessionIdBytes)
+			if err != nil {
+				log.Fatal("Random session id generation not working, something is terribly wrong, crashing!")
+			}
+		}
+		//Converting directly to string => invalid cookie value
+		//Converting each byte to an int should be 'random enough'
+		sessionId := ""
+		for _, b := range sessionIdBytes {
+			sessionId += strconv.Itoa(int(b))
+		}
 		requestedToken.sessionIdHash = hashCredentials(sessionId)
 		tokenMap[identifier] = requestedToken
 		return true, sessionId
 	}
-	logo.LogDebug("Someone used identifier '" + identifier + "' in order to try accessing a token for which he didn't have credentials")
+	log.Println("Someone used identifier '" + identifier + "' in order to try accessing a token for which he didn't have credentials")
 	return false, ""
 }
 
@@ -194,7 +213,9 @@ func hashCredentials(credentials string) []byte {
 	//Generating a 32-byte hash key (again, since that's the example)
 	hash, err := scrypt.Key([]byte(credentials), salt, 16384, 8, 1, 32)
 	//Hashing of credentials fails, this shouldn't happen and I don't know how to handle it, crashing app
-	logo.RuntimeFatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return hash
 }
 

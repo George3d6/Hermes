@@ -15,7 +15,7 @@ const colors = require('colors');
     const page = await instance.createPage();
 
     //Open and authenticate, assumes the admin accounts is 'admin' and password 'admin'
-    const status_auth = await page.open('http://localhost:3280/get/authentication/?identifier=admin&credentials=admin');
+    const status_auth = await page.open('http://localhost:3280/get/authentication/?identifier=admin&credentials=admin&redirect=true');
     const content = await page.property('content');
     await page.property('viewportSize', {
         width: 1600,
