@@ -4,7 +4,7 @@
 
 A minimalistic, easy to deploy, easy to use, self-contained file server.
 
-##### Version 0.4.2
+##### Version 0.4.4
 
 Working example: https://hermes.cerebralab.com/
 
