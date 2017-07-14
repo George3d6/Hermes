@@ -9,7 +9,7 @@ import (
 	"sync"
 	"log"
 	"strconv"
-
+	"encoding/hex"
 
 	"golang.org/x/crypto/scrypt"
 )
@@ -181,10 +181,7 @@ func ValidateToke(identifier string, credentials string, cheat bool) (bool, stri
 		}
 		//Converting directly to string => invalid cookie value
 		//Converting each byte to an int should be 'random enough'
-		sessionId := ""
-		for _, b := range sessionIdBytes {
-			sessionId += strconv.Itoa(int(b))
-		}
+		sessionId := hex.EncodeToString(sessionIdBytes)
 		requestedToken.sessionIdHash = hashCredentials(sessionId)
 		tokenMap[identifier] = requestedToken
 		return true, sessionId
