@@ -11,3 +11,4 @@ dist
 dist.tar.gz
 dist/*
 dist*
+test_upload.txt

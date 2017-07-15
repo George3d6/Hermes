@@ -10,14 +10,21 @@
   font-family: "Titillium-Bold";
   src: url(../static/fonts/Titillium-Bold.otf); }
 
-body, html {
-  font-family: Titillium-Thin !important;
-  padding: 0 0 0 0;
-  margin: 0 0 0 0; }
+html {
+  width: 100%;
+  margin: 0; }
 
 body {
+  width: 100% !important;
+  font-family: Titillium-Thin !important;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
   color: #363636;
-  background-color: #fbfbfb; }
+  background-color: #fbfbfb;
+  overflow: visible; }
+
+.ui.grid {
+  margin: 0 !important; }
 
 a {
   color: #64b5f6;
@@ -25,6 +32,11 @@ a {
 
 a:hover {
   color: #f48fb1; }
+
+#error_holder {
+  width: 100%;
+  text-align: center;
+  display: inline-block; }
 
 #the_header {
   background-color: #fce4ec;

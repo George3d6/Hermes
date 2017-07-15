@@ -26,15 +26,23 @@ $break-large: 1023px;
     src: url(../static/fonts/Titillium-Bold.otf);
 }
 
-body, html {
-    font-family: Titillium-Thin !important;
-    padding: 0 0 0 0;
-    margin: 0 0 0 0;
+html {
+    width: 100%;
+    margin: 0;
 }
 
 body {
+    width: 100% !important;
+    font-family: Titillium-Thin !important;
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
     color: $text;
     background-color: $background;
+    overflow: visible;
+}
+
+.ui.grid {
+  margin: 0 !important; // Change to 0
 }
 
 a {
