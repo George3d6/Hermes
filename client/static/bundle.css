@@ -12,16 +12,16 @@
 
 html {
   width: 100%;
-  margin: 0; }
+  margin: 0;
+  padding: 0; }
 
 body {
-  width: 100% !important;
+  width: 100%;
   font-family: Titillium-Thin !important;
   padding: 0 0 0 0;
   margin: 0 0 0 0;
   color: #363636;
-  background-color: #fbfbfb;
-  overflow: visible; }
+  background-color: #fbfbfb; }
 
 .ui.grid {
   margin: 0 !important; }
