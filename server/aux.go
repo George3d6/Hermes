@@ -1,9 +1,7 @@
 package main
 
 import (
-	//"bytes"
 	"mime/multipart"
-	//"git.cerebralab.com/george/logo"
 )
 
 //A package for auxiliary functions

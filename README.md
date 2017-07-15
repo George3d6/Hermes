@@ -66,7 +66,7 @@ mkdir ser storage;
 ./hermes 'config.json' 'admin' 'admin';
 ```
 
-An easy way to test if the project is running on your machine is runing the regression
+An easy way to test if the project is running on your machine is running the regression
 
 ```bash
 cd tests && npm install && ./regression.sh

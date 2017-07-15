@@ -2,11 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"time"
-
-	"git.cerebralab.com/george/logo"
 )
 
 //Used for holding the configuration
@@ -26,7 +25,9 @@ func main() {
 	}
 
 	file, err := os.Open(configurationFile)
-	logo.RuntimeFatal(err)
+	if err != nil {
+		log.Println(err)
+	}
 	decoder := json.NewDecoder(file)
 
 	err = decoder.Decode(&Configuration)
@@ -34,7 +35,6 @@ func main() {
 		panic("Cannot decode configuration")
 	}
 
-	logo.InitLoggers(Configuration.LogPath)
 	initHandlers(os.Args[2], os.Args[3])
 
 	var server = &http.Server{
@@ -64,6 +64,8 @@ func main() {
 	http.HandleFunc("/", serveHome)
 
 	//Start Server
-	logo.LogDebug("Server will start running on port: " + Configuration.Port + "\n")
-	logo.RuntimeFatal(server.ListenAndServe())
+	log.Printf("Server will start running on port: %s\n", Configuration.Port)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }

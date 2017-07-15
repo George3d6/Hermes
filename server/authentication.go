@@ -2,14 +2,13 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
-	"math"
 	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"log"
+	"math"
 	"strings"
 	"sync"
-	"log"
-	"strconv"
-	"encoding/hex"
 
 	"golang.org/x/crypto/scrypt"
 )

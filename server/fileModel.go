@@ -2,12 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"git.cerebralab.com/george/logo"
 )
 
 //FileModel used to model a file and control it
@@ -29,7 +28,12 @@ func (file FileModel) GetDeathTime() time.Time {
 
 //Delete removes the file from the system
 func (file *FileModel) Delete() bool {
-	return logo.RuntimeError(os.Remove(file.Path))
+	err := os.Remove(file.Path)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	return true
 }
 
 //Update does maintanance work
@@ -44,14 +48,18 @@ func (file *FileModel) Update() bool {
 //Serialize gives a string (as a byte slice) represntation of a FileModel struct
 func (file *FileModel) Serialize() []byte {
 	serialization, err := json.Marshal(file)
-	logo.RuntimeError(err)
+	if err != nil {
+		log.Println(err)
+	}
 	return serialization
 }
 
 //DeserializeFileModel takes a byte slice and create a FileModel
 func DeserializeFileModel(serialization []byte) FileModel {
 	var newFileModel FileModel
-	logo.RuntimeError(json.Unmarshal(serialization, &newFileModel))
+	if err := json.Unmarshal(serialization, &newFileModel); err != nil {
+		log.Println(err)
+	}
 	return newFileModel
 }
 

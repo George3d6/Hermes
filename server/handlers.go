@@ -10,8 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"git.cerebralab.com/george/logo"
+	"log"
 
 	"github.com/ulikunitz/xz"
 )
@@ -21,9 +20,13 @@ var globalFileList FileList
 func initHandlers(adminName string, adminPassword string) {
 	fmt.Println(Configuration.StatePath + "file_list.json")
 	flcontent, err := ioutil.ReadFile(Configuration.StatePath + "file_list.json")
-	logo.RuntimeError(err)
+	if err != nil {
+		log.Println(err)
+	}
 	tmcontent, err := ioutil.ReadFile(Configuration.StatePath + "token_map.json")
-	logo.RuntimeError(err)
+	if err != nil {
+		log.Println(err)
+	}
 	globalFileList = DeserializeFileList(flcontent)
 	DeserializeTokenMap(tmcontent)
 	InitializeAdmin([]byte("the salt"), adminName, adminPassword)
@@ -42,11 +45,17 @@ func initHandlers(adminName string, adminPassword string) {
 
 				//save token map
 				tmSerializationFile, err := os.Create(Configuration.StatePath + "token_map.json")
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 				_, err = io.Copy(tmSerializationFile, strings.NewReader(oldTmSerialization))
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 				err = tmSerializationFile.Close()
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 
 			if oldFlSerialization != newFlSerialization {
@@ -54,11 +63,17 @@ func initHandlers(adminName string, adminPassword string) {
 
 				//save file list
 				fileListSerializationFile, err := os.Create(Configuration.StatePath + "file_list.json")
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 				_, err = io.Copy(fileListSerializationFile, strings.NewReader(oldFlSerialization))
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 				err = fileListSerializationFile.Close()
-				logo.RuntimeError(err)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 	}()
@@ -108,10 +123,14 @@ func initHandlers(adminName string, adminPassword string) {
 //Server the index.html file
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	index, err := ioutil.ReadFile("./client/index.html")
-	logo.RuntimeError(err)
+	if err != nil {
+		log.Println(err)
+	}
 
 	if err != nil {
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
@@ -131,14 +150,14 @@ func engageAuthSession(w http.ResponseWriter, r *http.Request) {
 			authCookie := http.Cookie{Path: "/", Name: "auth", Value: string(identifier + "#|#" + sessionId), Expires: expiration, MaxAge: 3600 * 24}
 			http.SetCookie(w, &authCookie)
 		} else {
-			if(redirect=="true") {
+			if redirect == "true" {
 				http.Redirect(w, r, "/", http.StatusUnauthorized)
 			} else {
 				fmt.Fprintf(w, `{"status":"error","message":"Your login credentials are not authorized"}`)
 			}
 			return true
 		}
-		if(redirect=="true") {
+		if redirect == "true" {
 			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			fmt.Fprintf(w, `{"status":"ok","message":"Authentication successful"}`)
@@ -154,7 +173,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(5000000000000000)
 
 	file, _, err := r.FormFile("file")
-	if logo.RuntimeError(err) {
+	if err != nil {
 		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, file can't be read"}`)
 		return
 	}
@@ -165,7 +184,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 	ttlString := r.FormValue("ttl")
 	ttl, err := strconv.Atoi(ttlString)
-	if logo.RuntimeError(err) {
+	if err != nil {
 		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, can't parse time to live(ttl)"}`)
 		return
 	}
@@ -241,16 +260,19 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	//Uploading
 	permanentFile, err := os.OpenFile(newFileModel.Path, os.O_WRONLY|os.O_CREATE, 0666)
 
-	if logo.RuntimeError(err) {
+	if err != nil {
+		log.Println(err)
 		fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 		return
 	}
+
 	defer permanentFile.Close()
 
 	switch compression := newFileModel.Compression; compression {
 	case "gz":
 		gzipped, err := gzip.NewWriterLevel(permanentFile, 6)
-		if logo.RuntimeError(err) {
+		if err != nil {
+			log.Println(err)
 			fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 			return
 		}
@@ -258,7 +280,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		io.Copy(gzipped, file)
 	case "xz":
 		xzw, err := xz.NewWriter(permanentFile)
-		if logo.RuntimeError(err) {
+		if err != nil {
+			log.Println(err)
 			fmt.Fprintf(w, `{"status":"error","message":"Could not upload file, there was an internal file system error, try again in a few seconds"}`)
 			return
 		}
@@ -339,10 +362,10 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 
 		sufix := ""
 		if file.Compression == "gz" {
-			sufix = ".gz";
+			sufix = ".gz"
 		}
 		if file.Compression == "xz" {
-			sufix = ".xz";
+			sufix = ".xz"
 		}
 
 		if IsPublic(file.Name) {
@@ -442,18 +465,28 @@ func createToken(w http.ResponseWriter, r *http.Request) {
 		identifier := r.URL.Query().Get("identifier")
 		credentials := r.URL.Query().Get("credentials")
 		uploadNumber, err := strconv.ParseInt(r.URL.Query().Get("uploadNumber"), 10, 64)
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 		uploadSize, err := strconv.ParseInt(r.URL.Query().Get("uploadSize"), 10, 64)
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 		reader, err := strconv.ParseBool(r.URL.Query().Get("reader"))
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 		writer, err := strconv.ParseBool(r.URL.Query().Get("writer"))
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 		admin, err := strconv.ParseBool(r.URL.Query().Get("admin"))
-		logo.RuntimeError(err)
+		if err != nil {
+			log.Println(err)
+		}
 
-		newTokenReadFiles := make([]string, 0, len(token.OwnedFiles) + 100)
-		newTokenOwneFiles := make([]string, 0, len(token.OwnedFiles) + 100)
+		newTokenReadFiles := make([]string, 0, len(token.OwnedFiles)+100)
+		newTokenOwneFiles := make([]string, 0, len(token.OwnedFiles)+100)
 		if reader {
 			for _, name := range token.OwnedFiles {
 				newTokenReadFiles = append(newTokenReadFiles, name)
