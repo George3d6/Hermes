@@ -2,6 +2,7 @@ logs
 storage
 client/node_modules
 client/package-lock.json
+client/package-lock.json
 hermes
 ser
 art
