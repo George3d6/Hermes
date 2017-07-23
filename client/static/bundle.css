@@ -139,6 +139,9 @@ a:hover {
 .trashed_icon:hover {
   color: #f44336 !important; }
 
+.copy_icon:hover {
+  color: #64b5f6 !important; }
+
 #close_file_view_holder {
   text-align: left; }
 
