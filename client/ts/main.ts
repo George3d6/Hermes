@@ -18,21 +18,26 @@ const initFileListView = () => {
             }
             const fileElements = stringifiedFile.split('|#|');
             files.push(
-                new File(fileElements[0], fileElements[1], parseInt(fileElements[2]))
+                new File(fileElements[0], fileElements[1], parseInt(fileElements[2]), <any>fileElements[3])
             );
             return files;
         });
         document.getElementById('file_list').insertAdjacentHTML('beforeend',
             `<p id="close_file_view_holder"><a href="/#!/empty/" id="close_file_view"><i class="close icon big"></i></a></p>`);
         files.forEach((f) => {
+            const hostName: string = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port;
             let fileDies: Date = new Date(f.death * 1000);
             let fileDiesString = fileDies.getUTCFullYear() + "-" + fileDies.getUTCMonth() + "-" + fileDies.getUTCDay() + " " + fileDies.getUTCHours() + ":" + fileDies.getUTCMinutes() + ":" + fileDies.getUTCSeconds();
+            const urlFileName: string = encodeURIComponent(f.name);
+            const fileLink: string = `${hostName}/get/file/?file=${urlFileName}`;
             document.getElementById('file_list').insertAdjacentHTML('beforeend',
-                `
+            `
             <div class="item file_in_list">
-             <i class="huge cloud download middle aligned icon cursor_hover files_icon" id="download_${f.name}" onclick="window.location='/get/file/?file=${f.name}';"></i>
-             <i class="huge trash middle aligned icon cursor_hover trashed_icon" id="trash_${f.name}"></i>
-              <div class="content" id="${f.name}" class="inline_content">
+             <input id="link_holder_${urlFileName}" style="display: none;" tabindex="1" autocomplete="off" style="width:1px !important; height:1px !important" type="text"></input>
+             <i class="huge cloud download middle aligned icon cursor_hover files_icon" id="download_${urlFileName}" onclick="window.location='/get/file/?file=${f.name}';" title="Download file"></i>
+             <i class="huge trash middle aligned icon cursor_hover trashed_icon" id="trash_${urlFileName}" title="Delete file"></i>
+             <i class="huge copy middle aligned icon cursor_hover copy_icon" id="copy_${urlFileName}" title="Copy link to clipboard"></i>
+              <div class="content" id="${urlFileName}" class="inline_content">
                 <p>
                     ${f.name}
                 </p>
@@ -46,13 +51,29 @@ const initFileListView = () => {
             </div>
             `
             );
-            document.getElementById(`trash_${f.name}`).addEventListener('click', (e) => {
-                const xhr = new XMLHttpRequest(); xhr.open('GET', '/delete/file/?file=' + f.name);
+            const copyLinkElement = (<any>document.getElementById(`link_holder_${urlFileName}`));
+            copyLinkElement.value = fileLink;
+            document.getElementById(`copy_${urlFileName}`).addEventListener('click', (e) => {
+                copyLinkElement.style.display = "inline";
+                copyLinkElement.select();
+                console.log((<any>document.getElementById(`link_holder_${urlFileName}`)).value);
+                document.execCommand('copy');
+                //clear selection
+                if ((<any>document).selection) {
+                    (<any>document).selection.empty();
+                } else if (window.getSelection) {
+                    window.getSelection().removeAllRanges();
+                }
+                copyLinkElement.style.display = "none";
+            });
+
+            document.getElementById(`trash_${urlFileName}`).addEventListener('click', (e) => {
+                const xhr = new XMLHttpRequest(); xhr.open('GET', '/delete/file/?file=' + urlFileName);
                 xhr.send(null);
                 xhr.onload = () => {
                     console.log(xhr.responseText);
                     const res = JSON.parse(xhr.responseText);
-                    if(res.status === "error") {
+                    if (res.status === "error") {
                         displayError(res.message);
                     } else {
                         displayMessage(res.message);

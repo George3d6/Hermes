@@ -28,6 +28,7 @@
     "webpack": "^2.6.1"
   },
   "dependencies": {
+    "clipboard": "^1.7.1",
     "navigo": "^4.7.1",
     "whatwg-fetch": "^2.0.3"
   }

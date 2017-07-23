@@ -114,17 +114,35 @@ var initFileListView = function () {
                 return;
             }
             var fileElements = stringifiedFile.split('|#|');
-            files.push(new file_1["default"](fileElements[0], fileElements[1], parseInt(fileElements[2])));
+            files.push(new file_1["default"](fileElements[0], fileElements[1], parseInt(fileElements[2]), fileElements[3]));
             return files;
         });
         document.getElementById('file_list').insertAdjacentHTML('beforeend', "<p id=\"close_file_view_holder\"><a href=\"/#!/empty/\" id=\"close_file_view\"><i class=\"close icon big\"></i></a></p>");
         files.forEach(function (f) {
+            var hostName = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port;
             var fileDies = new Date(f.death * 1000);
             var fileDiesString = fileDies.getUTCFullYear() + "-" + fileDies.getUTCMonth() + "-" + fileDies.getUTCDay() + " " + fileDies.getUTCHours() + ":" + fileDies.getUTCMinutes() + ":" + fileDies.getUTCSeconds();
-            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <i class=\"huge cloud download middle aligned icon cursor_hover files_icon\" id=\"download_" + f.name + "\" onclick=\"window.location='/get/file/?file=" + f.name + "';\"></i>\n             <i class=\"huge trash middle aligned icon cursor_hover trashed_icon\" id=\"trash_" + f.name + "\"></i>\n              <div class=\"content\" id=\"" + f.name + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDiesString + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
-            document.getElementById("trash_" + f.name).addEventListener('click', function (e) {
+            var urlFileName = encodeURIComponent(f.name);
+            var fileLink = hostName + "/get/file/?file=" + urlFileName;
+            document.getElementById('file_list').insertAdjacentHTML('beforeend', "\n            <div class=\"item file_in_list\">\n             <input id=\"link_holder_" + urlFileName + "\" style=\"display: none;\" tabindex=\"1\" autocomplete=\"off\" style=\"width:1px !important; height:1px !important\" type=\"text\"></input>\n             <i class=\"huge cloud download middle aligned icon cursor_hover files_icon\" id=\"download_" + urlFileName + "\" onclick=\"window.location='/get/file/?file=" + f.name + "';\" title=\"Download file\"></i>\n             <i class=\"huge trash middle aligned icon cursor_hover trashed_icon\" id=\"trash_" + urlFileName + "\" title=\"Delete file\"></i>\n             <i class=\"huge copy middle aligned icon cursor_hover copy_icon\" id=\"copy_" + urlFileName + "\" title=\"Copy link to file\"></i>\n              <div class=\"content\" id=\"" + urlFileName + "\" class=\"inline_content\">\n                <p>\n                    " + f.name + "\n                </p>\n                <p>\n                    Valid until: " + fileDiesString + "\n                </p>\n                <div>\n                    Compression: " + f.compression + "\n                </div>\n                </div>\n            </div>\n            ");
+            var copyLinkElement = document.getElementById("link_holder_" + urlFileName);
+            copyLinkElement.value = fileLink;
+            document.getElementById("copy_" + urlFileName).addEventListener('click', function (e) {
+                copyLinkElement.style.display = "inline";
+                copyLinkElement.select();
+                console.log(document.getElementById("link_holder_" + urlFileName).value);
+                document.execCommand('copy');
+                //clear selection
+                if (document.selection) {
+                    document.selection.empty();
+                } else if (window.getSelection) {
+                    window.getSelection().removeAllRanges();
+                }
+                copyLinkElement.style.display = "none";
+            });
+            document.getElementById("trash_" + urlFileName).addEventListener('click', function (e) {
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET', '/delete/file/?file=' + f.name);
+                xhr.open('GET', '/delete/file/?file=' + urlFileName);
                 xhr.send(null);
                 xhr.onload = function () {
                     console.log(xhr.responseText);
@@ -164,13 +182,14 @@ router_1["default"].on('/empty/', function () {
 
 exports.__esModule = true;
 var FileModel = function () {
-    function FileModel(name, compression, death, size) {
+    function FileModel(name, compression, death, isPublic, size) {
         if (size === void 0) {
             size = 0;
         }
         this.name = name;
         this.death = death;
         this.compression = compression;
+        this.isPublic = isPublic;
         this.size = size;
     }
     return FileModel;

@@ -32,6 +32,7 @@ type Token struct {
 	GrantToken     bool     `json"grantToken"`
 	Readers        []string `json:"readers"`
 	Equals         []string `json:equals`
+	MarkedToDie	   bool		`json:"markedToDie"`
 	sessionIdHash  []byte
 }
 
@@ -136,7 +137,7 @@ func DeserializeToken(serialization []byte) Token {
 //MakeToken is the function that can be called to create a token
 func MakeToken(identifier string, credentials string, readPermission []string, uploadSize int64, uploadNumber int64, ownedFiles []string, grantToken bool, readers []string, equals []string) Token {
 	return Token{Identifier: identifier, Hash: hashCredentials(credentials), ReadPermission: readPermission, UploadNumber: uploadNumber, UploadSize: uploadSize,
-		OwnedFiles: ownedFiles, GrantToken: grantToken, Readers: readers, Equals: equals}
+		OwnedFiles: ownedFiles, GrantToken: grantToken, Readers: readers, Equals: equals, MarkedToDie: false}
 }
 
 func RunUnderAuthWMutex(task func(*map[string]Token) interface{}) interface{} {

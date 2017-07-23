@@ -5,12 +5,15 @@ class FileModel {
     death: number;
     //Compression level (should be plain, gz or xz)
     compression: string;
+    //Is the file public ?
+    isPublic: boolean;
     //Size of file in KB
     size: number;
-    constructor(name: string, compression: string, death: number, size: number = 0) {
+    constructor(name: string, compression: string, death: number, isPublic: boolean, size: number = 0) {
         this.name = name;
         this.death = death;
         this.compression = compression;
+        this.isPublic = isPublic;
         this.size = size;
     }
 }

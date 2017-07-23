@@ -110,6 +110,9 @@ func initHandlers(adminName string, adminPassword string) {
 					}
 					token.OwnedFiles = newWFileList
 					(*authMap)[token.Identifier] = token
+					if(token.MarkedToDie) {
+						delete(*authMap, token.Identifier)
+					}
 				}
 
 				globalFileList.CleanUp()
@@ -329,11 +332,11 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 			for _, file := range fileList {
 				if !isAuthenticated {
 					if IsPublic(file.Name) {
-						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "#|#"
+						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "|#|true#|#"
 					}
 				} else if isAuthenticated {
 					if token.IsReader(file.Name) {
-						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "#|#"
+						stringified += file.Name + "|#|" + file.Compression + "|#|" + strconv.Itoa(int(file.GetDeathTime().Unix())) + "|#|" + strconv.Itoa(int(file.Size)) + "|#|false#|#"
 					}
 				}
 			}
@@ -349,12 +352,14 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 
 //getFile
 func getFile(w http.ResponseWriter, r *http.Request) {
+	identifier := r.URL.Query().Get("identifier")
+	credentials := r.URL.Query().Get("credentials")
+
 	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		fileName := r.URL.Query().Get("file")
 		//There's actually not a build in find '( ...
 		//also the list should probably be sroted and I should implement a basic search function
 		found, file := globalFileList.FindFile(fileName)
-
 		if !found {
 			fmt.Fprintf(w, `{"status":"error","message":"File not found"}`)
 			return false
@@ -375,22 +380,34 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//Doing the authentication
-		cookie, err := r.Cookie("auth")
-		if err != nil {
-			fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
-			return false
+		var token Token
+		if identifier != "" || credentials != "" {
+			valid, _ := ValidateToke(identifier, credentials, false)
+			if !valid {
+				fmt.Fprintf(w, `{"status":"error","message":"File is not public and you are not authenticated"}`)
+				return false
+			}
+			token = (*tokenMap)[identifier]
+			token.MarkedToDie = true
+			(*tokenMap)[identifier] = token
+		} else {
+			cookie, err := r.Cookie("auth")
+			if err != nil {
+				fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
+				return false
+			}
+			values := strings.Split(cookie.Value, "#|#")
+			if len(values) != 2 {
+				fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
+				return false
+			}
+			valid := false
+			valid, token = ValidateSession(values[0], values[1])
+			if !valid {
+				fmt.Fprintf(w, `{"status":"error","message":"File is not public and you are not authenticated"}`)
+				return false
+			}
 		}
-		values := strings.Split(cookie.Value, "#|#")
-		if len(values) != 2 {
-			fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
-			return false
-		}
-		valid, token := ValidateSession(values[0], values[1])
-		if !valid {
-			fmt.Fprintf(w, `{"status":"error","message":"File is not public and you are not authenticated"}`)
-			return false
-		}
-
 		if token.IsReader(file.Name) {
 			w.Header().Set("Content-Disposition", "attachment; filename="+file.Name+sufix)
 			http.ServeFile(w, r, file.Path)
