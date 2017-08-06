@@ -123,6 +123,20 @@ func initHandlers(adminName string, adminPassword string) {
 	}()
 }
 
+func getAuthCookie(w http.ResponseWriter, r *http.Request) (bool, []string) {
+	cookie, err := r.Cookie("auth")
+	if err != nil {
+		fmt.Fprintf(w, `{"status":"error","message":"Not authenticated}`)
+		return false, []string{}
+	}
+	values := strings.Split(cookie.Value, "#|#")
+	if len(values) != 2 {
+		fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed}`)
+		return false, []string{}
+	}
+	return true, values
+}
+
 //Server the index.html file
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	index, err := ioutil.ReadFile("./client/index.html")
@@ -204,16 +218,8 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	newFileModel := FileModel{Path: Configuration.FilePath + strings.Replace(name, "/", "wtf", -1) + extension, Name: name, TTL: int64(ttl), Birth: time.Now(),
 		Compression: compression, Size: GetFileSizeInBytes(file)}
 	//Doing the authentication
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		fmt.Fprintf(w, `{"status":"error","message":"Not authenticated}`)
-		return
-	}
-	values := strings.Split(cookie.Value, "#|#")
-	if len(values) != 2 {
-		fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed}`)
-		return
-	}
+	succ, values := getAuthCookie(w,r);
+	if(!succ) { return }
 
 	isAuthenticatedInterface := RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		valid, token := ValidateSession(values[0], values[1])
@@ -316,6 +322,7 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 		isAuthenticated := false
 		var token Token
 
+
 		//Doing the authentication
 		cookie, err := r.Cookie("auth")
 		if err == nil {
@@ -391,16 +398,8 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 			token.MarkedToDie = true
 			(*tokenMap)[identifier] = token
 		} else {
-			cookie, err := r.Cookie("auth")
-			if err != nil {
-				fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
-				return false
-			}
-			values := strings.Split(cookie.Value, "#|#")
-			if len(values) != 2 {
-				fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
-				return false
-			}
+			succ, values := getAuthCookie(w, r)
+			if(!succ) { return false }
 			valid := false
 			valid, token = ValidateSession(values[0], values[1])
 			if !valid {
@@ -426,16 +425,8 @@ func removeFile(w http.ResponseWriter, r *http.Request) {
 	filename := r.URL.Query().Get("file")
 
 	//Doing the authentication
-	cookie, err := r.Cookie("auth")
-	if err != nil {
-		fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
-		return
-	}
-	values := strings.Split(cookie.Value, "#|#")
-	if len(values) != 2 {
-		fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
-		return
-	}
+	succ, values := getAuthCookie(w, r)
+	if(!succ) { return }
 	valid, token := ValidateSession(values[0], values[1])
 	if !valid {
 		fmt.Fprintf(w, `{"status":"error","message":"Session id is invalid, please relog"}`)
@@ -458,16 +449,9 @@ func removeFile(w http.ResponseWriter, r *http.Request) {
 func createToken(w http.ResponseWriter, r *http.Request) {
 	RunUnderAuthWMutex(func(tokenMap *map[string]Token) interface{} {
 		//Doing the authentication
-		cookie, err := r.Cookie("auth")
-		if err != nil {
-			fmt.Fprintf(w, `{"status":"error","message":"Not authenticated"}`)
-			return false
-		}
-		values := strings.Split(cookie.Value, "#|#")
-		if len(values) != 2 {
-			fmt.Fprintf(w, `{"status":"error","message":"Authentication cookie malformed"}`)
-			return false
-		}
+		succ, values := getAuthCookie(w, r)
+		if(!succ) { return false }
+
 		valid, token := ValidateSession(values[0], values[1])
 		if !valid {
 			fmt.Fprintf(w, `{"status":"error","message":"Session id is invalid, please relog"}`)

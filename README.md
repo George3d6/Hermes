@@ -8,7 +8,7 @@ A minimalistic, easy to deploy, easy to use, self-contained file server.
 
 Working example: https://hermes.cerebralab.com/
 
-## Instalation
+## Installation
 
 ```bash
 wget --content-disposition 'https://hermes.cerebralab.com/get/file/?file=Hermes.tar.gz' && tar -xvf Hermes.tar.gz && cd dist && ./hermes 'config.json' 'admin' 'password'
