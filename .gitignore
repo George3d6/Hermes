@@ -1,5 +1,6 @@
 logs
 storage
+client/static/bundle.js
 client/node_modules
 client/package-lock.json
 client/package-lock.json
