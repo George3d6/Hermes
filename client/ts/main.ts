@@ -34,10 +34,12 @@ const initFileListView = () => {
             `
             <div class="item file_in_list">
              <input id="link_holder_${urlFileName}" style="display: none;" tabindex="1" autocomplete="off" style="width:1px !important; height:1px !important" type="text"></input>
-             <i class="huge cloud download middle aligned icon cursor_hover files_icon" id="download_${urlFileName}" onclick="window.location='/get/file/?file=${f.name}';" title="Download file"></i>
-             <i class="huge trash middle aligned icon cursor_hover trashed_icon" id="trash_${urlFileName}" title="Delete file"></i>
-             <i class="huge copy middle aligned icon cursor_hover copy_icon" id="copy_${urlFileName}" title="Copy link to clipboard"></i>
-              <div class="content" id="${urlFileName}" class="inline_content">
+             <div class="file_control_icon_holder">
+             <i class="huge cloud download middle aligned icon list_icon cursor_hover files_icon" id="download_${urlFileName}" onclick="window.location='/get/file/?file=${f.name}';" title="Download file"></i>
+             <i class="huge trash middle aligned icon list_icon cursor_hover trashed_icon" id="trash_${urlFileName}" title="Delete file"></i>
+             <i class="huge copy middle aligned icon list_icon cursor_hover copy_icon" id="copy_${urlFileName}" title="Copy link to clipboard"></i>
+             </div>
+             <div class="content" id="${urlFileName}">
                 <p>
                     ${f.name}
                 </p>
@@ -49,6 +51,7 @@ const initFileListView = () => {
                 </div>
                 </div>
             </div>
+            <br>
             `
             );
             const copyLinkElement = (<any>document.getElementById(`link_holder_${urlFileName}`));
