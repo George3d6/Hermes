@@ -423,7 +423,7 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 func removeFile(w http.ResponseWriter, r *http.Request) {
 	//@TODO FIND WAYS TO REMOVE FROM EVERY TOKEN.... ARGH -_-
 	filename := r.URL.Query().Get("file")
-
+	log.Println(filename)
 	//Doing the authentication
 	succ, values := getAuthCookie(w, r)
 	if(!succ) { return }

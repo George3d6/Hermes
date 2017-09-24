@@ -159,7 +159,7 @@ func (list *FileList) DeleteFile(name string) (bool, FileModel) {
 			//@TODO: Look into doing this more efficiently using copy or a similar mechanism
 			newList = append(newList, file)
 		} else {
-			success = !file.Delete()
+			success = file.Delete()
 			fileDeleted = file
 			if !success {
 				newList = append(newList, file)
