@@ -25,7 +25,8 @@ const initFileListView = () => {
         document.getElementById('file_list').insertAdjacentHTML('beforeend',
             `<p id="close_file_view_holder"><a href="/#!/empty/" id="close_file_view"><i class="close icon big"></i></a></p>`);
         files.forEach((f) => {
-            const hostName: string = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port;
+            const port_str : string = window.location.port === undefined ? '' :  ":" + window.location.port;
+            const hostName: string = window.location.protocol + "//" + window.location.hostname + port_str;
             let fileDies: Date = new Date(f.death * 1000);
             let fileDiesString = fileDies.getUTCFullYear() + "-" + fileDies.getUTCMonth() + "-" + fileDies.getUTCDay() + " " + fileDies.getUTCHours() + ":" + fileDies.getUTCMinutes() + ":" + fileDies.getUTCSeconds();
             const urlFileName: string = encodeURIComponent(f.name);
