@@ -27,6 +27,7 @@ Keep in mind if you are using a version prior to 1.0.0 you are likely to run int
 
 Furthermore, keep in mind that good sysadmin practices should be partaken in when running your own server of any kind. That means, don't run this binary as root, preferably (if you think your users might be malicious),run as a user that only has w access to the ser and storage, directory.
 
+
 ## Roadmap
 
 - Improve error&success communication to the client and display them in a friendly way to the user
